@@ -38,10 +38,9 @@ class mainControl:
     def pick_ball(self):
         self.send('cam', 150)
         self.send('clip', 27)
-        self.send('arm', 12)
+        self.send('arm', 9)
         self.send('cam_swtch', False)
         self.PickBall = PickBall(self.win_center)
-
         while True:
             try:
                 coordinates = self.img_get()
@@ -55,6 +54,7 @@ class mainControl:
                     sleep(0.2)
                     self.send('arm', 180)
                     sleep(0.3)
+                    self.send('clip', 30)
                     break
 
             except KeyboardInterrupt:
@@ -65,9 +65,11 @@ class mainControl:
     def run(self):
         while not self.exit:
             if not self.pick_ball():
+                print('break')
                 break
 
         self.stop()
+        return
 
 
 

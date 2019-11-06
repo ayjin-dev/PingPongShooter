@@ -109,13 +109,11 @@ class CommandThread(Thread):
         self.cmd_q = cmd_q
         self.exit_event = exit_event
         self.car = RoboCar()
-        # self.car.reset()
+        self.car.reset()
 
 
     def run(self):
         car = self.car
-        car.reset()
-        sleep(0.1)
 
         while not self.exit_event.is_set():
             if self.exit_event.is_set():

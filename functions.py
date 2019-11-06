@@ -19,11 +19,9 @@ class PickBall:
         self.ball = None
         self.should_run = False
         self.last_spd = array([0.,0.])
-
         # left clipper, right clipper
         self.clipper = array([[198, 193],[218, 197]])
         self.clipper[1] -= self.clipper[0]
-
 
     def run(self, coordinates):
         if coordinates is not None:
@@ -57,10 +55,10 @@ class PickBall:
                 spd = (self.searching,-self.searching)
 
         spd = around(spd).astype(int)
+        should_run = sum(self.last_spd - spd) == 0
         self.last_spd = spd
 
-        if not sum(self.last_spd - spd) != 0:
+        if should_run == 0:
             return 0,None
         else:
-
             return 0,spd
