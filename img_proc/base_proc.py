@@ -28,7 +28,7 @@ class BaseProc(object):
         self.iters = 1
         self.k_size = 1
         self.morph_elem = None
-        
+
         self.restore_config()
 
     def img_resize(self):
@@ -54,7 +54,7 @@ class BaseProc(object):
         rectangle(self.frame, (x,y), (x+w,y+h), color, 2)
         target_center = x+w//2, y+h//2
         circle(self.frame, target_center, 2, color,-1)
-        line(self.frame, target_center, self.win_center, color, 2)
+        # line(self.frame, target_center, self.win_center, color, 2)
 
     def change_color(self, color):
         print('change color:', color)

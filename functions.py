@@ -1,9 +1,11 @@
-from numpy import array,around,sum,argmin,cross
+from numpy import array,argmin,around,sum,cross
 from numpy.linalg import norm
 from time import time
 
+from img_proc.img_proc import CLIPPER
+
 class PickBall:
-    def __init__(self, expect):
+    def __init__(self):
         self.searching = 130
 
         self.Kp = [.3, .3]
@@ -14,29 +16,24 @@ class PickBall:
         self.last_err = array([0.,0.])
         self.err_sum = array([0.,0.])
 
-        self.found = False
-        self.expect = expect
-        self.ball = None
+        self.__found = False
         self.should_run = False
         self.last_spd = array([0.,0.])
-        # left clipper, right clipper
-        self.clipper = array([[198, 193],[218, 197]])
+        self.clipper = array(CLIPPER)
+        self.expect = sum(self.clipper)//2
         self.clipper[1] -= self.clipper[0]
 
-    def run(self, coordinates):
-        if coordinates is not None:
-            if self.found:
-                self.ball = coordinates[argmin([norm(self.ball[:2] - c[:2]) for c in coordinates])]
-            # first found
-            else:
-                self.ball = coordinates[-1]
+    def run(self, ball):
+        if ball is not None:
+            if not self.__found:
                 self.last_err = array([0,0])
                 self.last_time = time()
                 self.err_sum = array([0.,0.])
-                self.found = True
+                self.__found = True
 
-            targ_p = self.ball[:2] + self.ball[-2:]//2
-            if cross(targ_p-self.clipper[0], self.clipper[1]) <= 0:
+            targ_p = ball[:2] + ball[-2:]//2
+            if cross(targ_p - self.clipper[0], self.clipper[1]) <= 0:
+                print('targ_p:', targ_p)
                 return 1, None
             # xerr, yerr
             err = self.expect - targ_p

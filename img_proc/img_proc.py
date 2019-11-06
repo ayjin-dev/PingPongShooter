@@ -1,23 +1,61 @@
 from threading import Thread
 from queue import Empty
 from .base_proc import BaseProc
-from cv2 import WINDOW_AUTOSIZE, namedWindow, imshow, waitKey, destroyAllWindows
+from cv2 import WINDOW_AUTOSIZE, namedWindow, imshow, waitKey, destroyAllWindows,line
+from numpy import array,argmin
+from numpy.linalg import norm
+
+CLIPPER = (181, 188), (204, 189)# left clipper, right clipper
+
+class Ball:
+    def __init__(self):
+        self.__found = False
+        self.ball = None
+    def run(self, coordinates):
+        if coordinates is not None:
+            if self.__found:
+                self.ball = coordinates[argmin([norm(self.ball[:2] - c[:2]) for c in coordinates])]
+            else:
+                self.ball = coordinates[-1]
+                self.__found = True
+
+            # targ_p = self.ball[:2] + self.ball[-2:]//2
+            return self.ball
+        else:
+            return None
+
 
 class ImgProc(BaseProc):
-
     def __init__(self, scale, img_q, mde_q, debug=True):
         super().__init__(scale)
         self.debug = debug
         self.img_q = img_q
         self.mde_q = mde_q
-
         self.exit = False
 
+        self.mode = None
+        self.draw_mode = None
+        self.cur_mode = None
+
+    def draw_ball(self, ball):
+        if ball is not None:
+            self.draw_ctr(ball)
+        line(self.frame, CLIPPER[0], CLIPPER[1], (0,0,255), 2)
+
+    def select_mode(self, mode):
+        if mode == 'ball':
+            self.change_color('red')
+            self.mode = Ball()
+            if self.debug:
+                self.draw_mode = self.draw_ball
+        elif mode == 'green_zone':
+            pass
+
     def processing(self):
+        mode = self.mde_q.get()
+        self.select_mode(mode)
         if self.debug:
             namedWindow('main', WINDOW_AUTOSIZE)
-
-        self.change_color(list(self.store.keys())[0])
 
         while True:
             _, self.frame = self.cap.read()
@@ -25,19 +63,20 @@ class ImgProc(BaseProc):
 
             try:
                 mode = self.mde_q.get_nowait()
-                if mode is not None and self.debug:
-                    self.draw_ctr(mode, (255,0,0))
+                self.select_mode(mode)
             except Empty:
                 pass
 
             self.morph_transform()
             coordinates = self.select_area()
 
-            self.img_q.put(item=coordinates, block=False)
+            coordinate = self.mode.run(coordinates)
+            self.img_q.put(item=coordinate, block=False)
 
-
-            if self.debug and coordinates is not None:
-                [self.draw_ctr(c) for c in coordinates]
+            if self.debug:
+                # [self.draw_ctr(c) for c in coordinates]
+                self.draw_mode(coordinate)
+                print('coordinate:', coordinate)
                 imshow('main', self.frame)
                 k = waitKey(1) & 0xFF
                 if k == ord('q'):

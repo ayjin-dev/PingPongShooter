@@ -35,20 +35,23 @@ class mainControl:
         print('stop!')
         print('full:{}, total:{}'.format(self.n_full, self.n_total))
 
-    def pick_ball(self):
+    def run(self):
         self.send('cam', 150)
         self.send('clip', 27)
         self.send('arm', 9)
-        self.send('cam_swtch', False)
-        self.PickBall = PickBall(self.win_center)
-        while True:
-            try:
-                coordinates = self.img_get()
+        # self.send('cam_swtch', False)
+        self.mde_q.put('ball')
+        self.PickBall = PickBall()
 
-                state, param = self.PickBall.run(coordinates)
+        while not self.exit:
+            try:
+                coordinate = self.img_get()
+
+                state, param = self.PickBall.run(coordinate)
+
                 if state == 0 and param is not None:
-                    self.send('spds', param)
-                    self.mde_q.put_nowait(self.PickBall.ball)
+                    # self.send('spds', param)
+                    pass
                 elif state == 1:
                     self.send('clip', 5)
                     sleep(0.2)
@@ -59,19 +62,7 @@ class mainControl:
 
             except KeyboardInterrupt:
                 break
-
-        return False
-
-    def run(self):
-        while not self.exit:
-            if not self.pick_ball():
-                print('break')
-                break
-
         self.stop()
-        return
-
-
 
 if __name__ == '__main__':
     cmd_q = CustomQueue(20)
