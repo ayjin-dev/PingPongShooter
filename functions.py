@@ -1,4 +1,4 @@
-from numpy import array,around,sum,argmin
+from numpy import array,around,sum,argmin,cross
 from numpy.linalg import norm
 from time import time
 
@@ -20,6 +20,10 @@ class PickBall:
         self.should_run = False
         self.last_spd = array([0.,0.])
 
+        # left clipper, right clipper
+        self.clipper = array([[198, 193],[218, 197]])
+        self.clipper[1] -= self.clipper[0]
+
 
     def run(self, coordinates):
         if coordinates is not None:
@@ -34,6 +38,8 @@ class PickBall:
                 self.found = True
 
             targ_p = self.ball[:2] + self.ball[-2:]//2
+            if cross(targ_p-self.clipper[0], self.clipper[1]) <= 0:
+                return 1, None
             # xerr, yerr
             err = self.expect - targ_p
             err_d = err - self.last_err
@@ -51,10 +57,10 @@ class PickBall:
                 spd = (self.searching,-self.searching)
 
         spd = around(spd).astype(int)
-        should_run = sum(self.last_spd - spd) != 0
         self.last_spd = spd
-        if not should_run:
-            return None
+
+        if not sum(self.last_spd - spd) != 0:
+            return 0,None
         else:
-            print('speed:', spd)
-            return spd
+
+            return 0,spd

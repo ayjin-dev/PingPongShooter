@@ -12,7 +12,6 @@ class ImgProc(BaseProc):
         self.mde_q = mde_q
 
         self.exit = False
-        self.restore_config()
 
     def processing(self):
         if self.debug:
@@ -28,13 +27,12 @@ class ImgProc(BaseProc):
                 mode = self.mde_q.get_nowait()
                 if mode is not None and self.debug:
                     self.draw_ctr(mode, (255,0,0))
-                # elif mode[0] == 'c':
-                #     self.change_color(mode[1])
             except Empty:
                 pass
 
             self.morph_transform()
             coordinates = self.select_area()
+
             self.img_q.put(item=coordinates, block=False)
 
 

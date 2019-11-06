@@ -22,13 +22,14 @@ class BaseProc(object):
 
         self.colors = ('red', 'blue', 'green','pink')
         self.store = {}
-        self.restore_config()
 
         self.min_ycb = [0,0,0]
         self.max_ycb = [255, 255, 255]
         self.iters = 1
         self.k_size = 1
         self.morph_elem = None
+        
+        self.restore_config()
 
     def img_resize(self):
         self.frame = resize(self.frame,  self.scale)

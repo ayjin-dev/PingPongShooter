@@ -102,7 +102,7 @@ class ColorSeg(BaseProc):
                 _, self.frame = self.cap.read()
                 self.img_resize()
 
-            self.morph_transform(self.cvt_ycb(self.frame))
+            self.morph_transform()
             cv.imshow('morphology', self.morph_img)
 
             k = cv.waitKey(5) & 0xFF
@@ -132,7 +132,7 @@ class ColorSeg(BaseProc):
                 _, self.frame = self.cap.read()
                 self.img_resize()
 
-            self.morph_transform(self.cvt_ycb(self.frame))
+            self.morph_transform()
             coordinates = self.select_area()
 
             if coordinates is not None:

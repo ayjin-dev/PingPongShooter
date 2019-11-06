@@ -3,7 +3,6 @@ from threading import Lock, Condition, Event
 from time import sleep
 from numpy import array,around
 
-
 from car_control.commander import CommandThread
 from img_proc.img_proc import ImageProcessingThread, ImgProc
 from car_control.rst_serial import CustomQueue
@@ -14,9 +13,8 @@ class mainControl:
         self.cmd_clear = cmd_q.clear
         self.cmd_put = cmd_q.put_nowait
         self.img_get = img_q.get
-
+        # self.img_clear = img_q.clear
         self.mde_q = mde_q
-
         self.exit = False
         self.win_center = around(scale*array([1920,1080])*0.5).astype(int)
 
@@ -25,7 +23,7 @@ class mainControl:
     def send(self, o, p):
         try:
             self.cmd_put((o,p))
-            sleep(0.012)
+            sleep(0.01)
         except Full:
             self.n_full += 1
             print('got full:{}'.format(o,p))
@@ -38,28 +36,40 @@ class mainControl:
         print('full:{}, total:{}'.format(self.n_full, self.n_total))
 
     def pick_ball(self):
-        pass
-
-    def run(self):
-        self.send('cam_swtch', True)
-        sleep(0.1)
         self.send('cam', 150)
-        # sleep(0.1)
-        self.send('clip', 30)
+        self.send('clip', 27)
         self.send('arm', 12)
         self.send('cam_swtch', False)
         self.PickBall = PickBall(self.win_center)
 
-        while not self.exit:
+        while True:
             try:
                 coordinates = self.img_get()
-                param = self.PickBall.run(coordinates)
-                if param is not None:
+
+                state, param = self.PickBall.run(coordinates)
+                if state == 0 and param is not None:
                     self.send('spds', param)
+                    self.mde_q.put_nowait(self.PickBall.ball)
+                elif state == 1:
+                    self.send('clip', 5)
+                    sleep(0.2)
+                    self.send('arm', 180)
+                    sleep(0.3)
+                    break
 
             except KeyboardInterrupt:
-                self.stop()
                 break
+
+        return False
+
+    def run(self):
+        while not self.exit:
+            if not self.pick_ball():
+                break
+
+        self.stop()
+
+
 
 if __name__ == '__main__':
     cmd_q = CustomQueue(20)
@@ -71,12 +81,9 @@ if __name__ == '__main__':
     exit_event = Event()
 
     scale = 0.20
-    debug = True
+    debug = True# True
 
-    img_thread = ImageProcessingThread(ImgProc(scale, img_q, mde_q, debug), exit_condition)
-    cmd_thread = CommandThread(cmd_q, exit_event)
-
-    threads = [cmd_thread, img_thread]
+    threads = [CommandThread(cmd_q, exit_event), ImageProcessingThread(ImgProc(scale, img_q, mde_q, debug), exit_condition)]
     for thread in threads:
         thread.start()
 

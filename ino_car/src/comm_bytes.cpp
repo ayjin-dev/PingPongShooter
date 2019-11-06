@@ -121,7 +121,7 @@ void get_msg_from_bytes() {
             case RESET:
             {
                 reset_all(MOTOR_1_ID);
-                delay(1);
+                // delay(1);
                 reset_all(MOTOR_2_ID);
 
                 write_order(RESET);
