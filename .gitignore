@@ -1,0 +1,6 @@
+*.pyc
+*.pkl
+__pycache__
+.pio
+.clang_complete
+.gcc-flags.json
