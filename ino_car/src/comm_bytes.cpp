@@ -112,19 +112,18 @@ void get_msg_from_bytes() {
         switch(order_received) {
             case CAN_INIT:
             {
-                bool ok = can_init();
-                if(ok) {
-                    write_order(CAN_INIT);
-                }
+                can_init();
+                // if(ok) {
+                //     write_order(CAN_INIT);
+                // }
                 break;
             }
             case RESET:
             {
                 reset_all(MOTOR_1_ID);
-                // delay(1);
                 reset_all(MOTOR_2_ID);
 
-                write_order(RESET);
+                // write_order(RESET);
                 break;
             }
             case MOTOR_1:

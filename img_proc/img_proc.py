@@ -5,25 +5,35 @@ from cv2 import WINDOW_AUTOSIZE, namedWindow, imshow, waitKey, destroyAllWindows
 from numpy import array,argmin
 from numpy.linalg import norm
 
-CLIPPER = (181, 188), (204, 189)# left clipper, right clipper
+# left clipper, right clipper
+CLIPPER = (192, 193), (220, 193)
+READY_CLIP = (192, 165), (220, 165)
 
 class Ball:
     def __init__(self):
         self.__found = False
-        self.ball = None
+        self.__ball = None
     def run(self, coordinates):
         if coordinates is not None:
             if self.__found:
-                self.ball = coordinates[argmin([norm(self.ball[:2] - c[:2]) for c in coordinates])]
+                self.__ball = coordinates[argmin([norm(self.__ball[:2] - c[:2]) for c in coordinates])]
             else:
-                self.ball = coordinates[-1]
+                self.__ball = coordinates[-1]
                 self.__found = True
-
-            # targ_p = self.ball[:2] + self.ball[-2:]//2
-            return self.ball
+                print('ball found')
+            return self.__ball
         else:
             return None
 
+class GreenZone:
+    def __init__(self):
+        self.__found = False
+
+    def run(self, coordinate):
+        if coordinate is not None:
+            return coordinate[-1]
+        else:
+            return None
 
 class ImgProc(BaseProc):
     def __init__(self, scale, img_q, mde_q, debug=True):
@@ -33,14 +43,24 @@ class ImgProc(BaseProc):
         self.mde_q = mde_q
         self.exit = False
 
+        self.restore_config()
+
         self.mode = None
         self.draw_mode = None
-        self.cur_mode = None
 
     def draw_ball(self, ball):
         if ball is not None:
-            self.draw_ctr(ball)
+            self.draw_ctr(ball, (255,0,0))
         line(self.frame, CLIPPER[0], CLIPPER[1], (0,0,255), 2)
+        line(self.frame, READY_CLIP[0], READY_CLIP[1], (255,0,0), 2)
+        # rectangle(self.frame, (x,y), (x+w,y+h), color, 2)
+
+    def draw_green(self, green):
+        if green is not None:
+            self.draw_ctr(green)
+            x,y,w,h = green
+            line(self.frame, (x,y), (x+w,y), (0,255,0), 2)
+
 
     def select_mode(self, mode):
         if mode == 'ball':
@@ -49,7 +69,10 @@ class ImgProc(BaseProc):
             if self.debug:
                 self.draw_mode = self.draw_ball
         elif mode == 'green_zone':
-            pass
+            self.change_color('green')
+            self.mode = GreenZone()
+            if self.debug:
+                self.draw_mode = self.draw_green
 
     def processing(self):
         mode = self.mde_q.get()
@@ -57,7 +80,7 @@ class ImgProc(BaseProc):
         if self.debug:
             namedWindow('main', WINDOW_AUTOSIZE)
 
-        while True:
+        while not self.exit:
             _, self.frame = self.cap.read()
             self.img_resize()
 
@@ -74,9 +97,12 @@ class ImgProc(BaseProc):
             self.img_q.put(item=coordinate, block=False)
 
             if self.debug:
-                # [self.draw_ctr(c) for c in coordinates]
                 self.draw_mode(coordinate)
-                print('coordinate:', coordinate)
+                if coordinates is not None:
+                    [self.draw_ctr(c,lw=1) for c in coordinates]
+                    pass
+
+                # print('coordinate:', coordinate)
                 imshow('main', self.frame)
                 k = waitKey(1) & 0xFF
                 if k == ord('q'):

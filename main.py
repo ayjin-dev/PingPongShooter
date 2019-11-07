@@ -6,7 +6,7 @@ from numpy import array,around
 from car_control.commander import CommandThread
 from img_proc.img_proc import ImageProcessingThread, ImgProc
 from car_control.rst_serial import CustomQueue
-from functions import PickBall
+from functions import PickBall, GreenZone
 
 class mainControl:
     def __init__(self, cmd_q, img_q, mde_q,scale):
@@ -19,6 +19,12 @@ class mainControl:
         self.win_center = around(scale*array([1920,1080])*0.5).astype(int)
 
         self.n_full, self.n_total = 0,0
+
+        self.mode = [False, False]
+        # self.sessions = [self.pick_ball]
+
+        self.mde_q.put('ball')
+        self.send('cam', 150)
 
     def send(self, o, p):
         try:
@@ -35,29 +41,59 @@ class mainControl:
         print('stop!')
         print('full:{}, total:{}'.format(self.n_full, self.n_total))
 
+    def pick_ball(self, coordinate):
+        if not self.mode[0]:
+            print('start picking a ball')
+            self.mode[0] = True
+            self.send('clip', 0)
+            self.send('arm', 12)
+            sleep(0.02)
+            self.send('cam_swtch', False)
+            self.PickBall = PickBall()
+
+        state, param = self.PickBall.run(coordinate)
+        if state == 0 and param is not None:
+            self.send('spds', param)
+        elif state == 1:
+            self.send('spst', 0)
+            sleep(0.01)
+            self.send('clip', 4)
+            sleep(0.1)
+            self.send('arm', 180)
+            sleep(.8)
+            self.send('clip', 30)
+            sleep(0.1)
+            self.stop()
+            self.mde_q.put('green_zone')
+            return True
+        elif state == 2:
+            self.send('spst', 0)
+            sleep(0.1)
+            self.send('clip', 27)
+        return False
+
+    def green_zone(self,coordinate):
+        if not self.mode[1]:
+            print('into green zone')
+            self.mode[1] = True
+            self.GreenZone = GreenZone()
+
+        state, param = self.GreenZone.run()
+        if state == 0 and param is not None:
+            self.send('spds', param)
+        elif state == 1:
+            return True
+        elif state == 2:
+            self.send('spst', param)
+
+        return False
+
     def run(self):
-        self.send('cam', 150)
-        self.send('clip', 27)
-        self.send('arm', 9)
-        # self.send('cam_swtch', False)
-        self.mde_q.put('ball')
-        self.PickBall = PickBall()
 
         while not self.exit:
             try:
                 coordinate = self.img_get()
-
-                state, param = self.PickBall.run(coordinate)
-
-                if state == 0 and param is not None:
-                    # self.send('spds', param)
-                    pass
-                elif state == 1:
-                    self.send('clip', 5)
-                    sleep(0.2)
-                    self.send('arm', 180)
-                    sleep(0.3)
-                    self.send('clip', 30)
+                if self.pick_ball(coordinate):
                     break
 
             except KeyboardInterrupt:
@@ -76,10 +112,13 @@ if __name__ == '__main__':
     scale = 0.20
     debug = True# True
 
-    threads = [CommandThread(cmd_q, exit_event), ImageProcessingThread(ImgProc(scale, img_q, mde_q, debug), exit_condition)]
+    image_thread = ImageProcessingThread(ImgProc(scale, img_q, mde_q, debug), exit_condition)
+
+    threads = [CommandThread(cmd_q, exit_event), image_thread]
     for thread in threads:
         thread.start()
 
+    sleep(1.32)
     main_control = mainControl(cmd_q, img_q, mde_q, scale)
     main_control.run()
 

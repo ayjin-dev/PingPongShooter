@@ -10,32 +10,9 @@ class RoboCar():
     def __init__(self):
         self._serial_file = open_serial_port()
         sleep(1)
-        self.vel = 20
-
-        if self.__send_comm(Order.CAN_INIT):
-            print("can init ok!")
-        else:
-            print("can init fail!")
-            exit(-1)
-
-    def __send_comm(self, order, wait_time=0):
-        write_order(self._serial_file, order)
-        sleep(wait_time)
-        is_done = False
-        while not is_done:
-            print("Waiting for reply...")
-            bytes_array = bytearray(self._serial_file.read(1))
-            if not bytes_array:
-                time.sleep(0.2)
-                print("byte not found!")
-                continue
-            byte = bytes_array[0]
-            if byte == order.value:
-                is_done = True
-        if(is_done):
-            return True
-        else:
-            return False
+        write_order(self._serial_file, Order.CAN_INIT)
+        # sleep(0.1)
+        print("can init!")
 
     def __set_motors_spd(self,m_id,vel):
         write_order(self._serial_file, m_id)
@@ -56,11 +33,9 @@ class RoboCar():
             print('cam switch off!')
 
     def reset(self,t_vel=20):
-        self.vel = t_vel
-        if self.__send_comm(Order.RESET, wait_time=1.5):
-            print("reset ok!")
-        else:
-            print("reset fail!")
+        write_order(self._serial_file, Order.RESET)
+        sleep(0.31)
+        print("reset done!")
 
     def set_motor_1_spd(self, vel):
         self.__set_motors_spd(Order.MOTOR_1, vel)
@@ -82,9 +57,9 @@ class RoboCar():
 
     def set_cam(self, pos):
         self.__cam_switch(True)
-        sleep(0.02)
+        sleep(0.05)
         self.__set_servos_pos(Order.CAM, pos)
-        sleep(0.02)
+        sleep(0.05)
         self.__cam_switch(False)
 
     def set_clip(self, pos):
@@ -111,7 +86,6 @@ class CommandThread(Thread):
         self.car = RoboCar()
         self.car.reset()
 
-
     def run(self):
         car = self.car
 
@@ -135,4 +109,5 @@ class CommandThread(Thread):
             elif order == 'spst':
                 car.speed_broadcast(param)
             elif order == 'spds':
-                car.two_motors_spd(param[0], param[1])
+                # now, positive for forward
+                car.two_motors_spd(-param[0], param[1])

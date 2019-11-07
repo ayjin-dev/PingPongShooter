@@ -2,7 +2,7 @@ import cv2 as cv
 import numpy as np
 from base_proc import BaseProc
 from numpy.linalg import norm
-from pickle import dump
+from pickle import dump,load
 
 class ColorSeg(BaseProc):
 
@@ -33,6 +33,8 @@ class ColorSeg(BaseProc):
                 break
             elif k == ord(' '):
                 self.paused = not self.paused
+            elif k == ord('p'):
+                print(self.store)
             elif k == ord('n'):
                 self.next_session = not self.next_session
                 cv.destroyWindow('Pixel')
@@ -114,7 +116,6 @@ class ColorSeg(BaseProc):
                 break
             elif k == ord('d'):
                 color = input(''.join(["{}:{}\n".format(i,c) for i,c in enumerate(self.colors)])+'select:')
-
                 self.dump_color(self.colors[int(color)])
             elif k == ord('s'):
                 self.save_config()
@@ -154,6 +155,8 @@ class ColorSeg(BaseProc):
                 break
             elif k == ord(' '):
                 self.paused = not self.paused
+            elif k == 27:
+                exit()
 
     def save_config(self):
         print("dump pickle!")
@@ -163,9 +166,8 @@ class ColorSeg(BaseProc):
         self.store[color] = (self.min_ycb, self.max_ycb,self.k_size, self.iters)
 
     def run(self):
-        if self.restore_config():
-            self.select_session()
-        else:
+        self.restore_config("../config.pkl")
+        while True:
             self.pixel_session()
 
 if __name__ == '__main__':
