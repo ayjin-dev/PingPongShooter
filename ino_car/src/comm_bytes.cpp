@@ -74,10 +74,11 @@ void reset_all(unsigned char motor_id) {
     t_vel: 0~+32757(int16_t, rpm),
     t_pos: -2147483648~+2147483647(int32_t, qc)
 */
-void move(unsigned char motor_id, int16_t t_vel) {
+void move(unsigned char motor_id) {
     unsigned char input_value[8] = {};
     unsigned char mode = 0x4;
-    // int16_t t_vel = read_i16();
+
+    int16_t t_vel = read_i16();
 
     input_value[0] = (unsigned char)((t_pwm>>8)&0xff);
     input_value[1] = (unsigned char)((t_pwm)&0xff);
@@ -92,9 +93,32 @@ void move(unsigned char motor_id, int16_t t_vel) {
     CAN.sendMsgBuf(motor_id, 0, 8, input_value);
 }
 
-void send_spd(unsigned char motor_id) {
-    int16_t t_vel = read_i16();
-    move(motor_id, t_vel);
+void twoMove() {
+    unsigned char input_value[8] = {};
+    unsigned char mode = 0x4;
+
+    int16_t t_vel_1 = read_i16();
+    int16_t t_vel_2 = read_i16();
+
+    input_value[0] = (unsigned char)((t_pwm>>8)&0xff);
+    input_value[1] = (unsigned char)((t_pwm)&0xff);
+    input_value[2] = (unsigned char)((t_vel_1>>8)&0xff);
+    input_value[3] = (unsigned char)(t_vel_1&0xff);
+    input_value[4] = 0x55;
+    input_value[5] = 0x55;
+    input_value[6] = 0x55;
+    input_value[7] = 0x55;
+
+    unsigned char motor_id = id_modifier(MOTOR_1_ID, mode);
+    CAN.sendMsgBuf(motor_id, 0, 8, input_value);
+
+    delay(10);
+
+    input_value[2] = (unsigned char)((t_vel_2>>8)&0xff);
+    input_value[3] = (unsigned char)(t_vel_2&0xff);
+
+    motor_id = id_modifier(MOTOR_2_ID, mode);
+    CAN.sendMsgBuf(motor_id, 0, 8, input_value);
 }
 
 void set_arm_pos() {
@@ -139,17 +163,17 @@ void get_msg_from_bytes() {
             }
             case MOTOR_1:
             {
-                send_spd(MOTOR_1_ID);
+                move(MOTOR_1_ID);
                 break;
             }
             case MOTOR_2:
             {
-                send_spd(MOTOR_2_ID);
+                move(MOTOR_2_ID);
                 break;
             }
             case MOTOR_BROADCAST:
             {
-                send_spd(MOTOR_BROADCAST_ID);
+                move(MOTOR_BROADCAST_ID);
                 break;
             }
             case ARM:
@@ -182,13 +206,11 @@ void get_msg_from_bytes() {
                 }
                 break;
             }
-            // case MOTORS:
-            // {
-            //     move(MOTOR_1_ID);
-            //     delay(0.01);
-            //     move(MOTOR_2_ID);
-            //     break;
-            // }
+            case MOTORS:
+            {
+                twoMove();
+                break;
+            }
             case SHOOT:
             {
                 set_shoot_pos();

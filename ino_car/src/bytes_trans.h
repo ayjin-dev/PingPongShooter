@@ -2,7 +2,8 @@
 #ifndef ORDER_H
 #define ORDER_H
 enum Order {
-    CAN_INIT = 0,
+    CAN_INIT = 10,
+    MOTORS = 11,
     RESET = 1,
     MOTOR_1 = 2,
     MOTOR_2 = 3,

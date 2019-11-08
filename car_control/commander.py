@@ -44,9 +44,9 @@ class RoboCar():
         self.__set_motors_spd(Order.MOTOR_2, vel)
 
     def two_motors_spd(self, lvel, rvel):
-        self.__set_motors_spd(Order.MOTOR_1, lvel)
-        sleep(0.01)
-        self.__set_motors_spd(Order.MOTOR_2, rvel)
+        write_order(self._serial_file, Order.MOTORS)
+        write_i16(self._serial_file, lvel)
+        write_i16(self._serial_file, rvel)
 
     def speed_broadcast(self, vel=40):
         write_order(self._serial_file, Order.MOTOR_BROADCAST)
@@ -74,11 +74,11 @@ class RoboCar():
         self.speed_broadcast(0)
 
     def forward(self, vel=40, wait_time=2):
-        self.set_motor_1_spd(vel)
-        self.set_motor_2_spd(-vel)
+        # self.set_motor_1_spd(vel)
+        # self.set_motor_2_spd(-vel)
+        self.two_motors_spd(vel, -vel)
         sleep(wait_time)
-        self.set_motor_1_spd(0)
-        self.set_motor_2_spd(0)
+        self.two_motors_spd(0,0)
 
 class CommandThread(Thread):
     def __init__(self, cmd_q, exit_event):

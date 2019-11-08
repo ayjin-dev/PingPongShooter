@@ -5,7 +5,8 @@ from enum import Enum
 from queue import Queue
 
 class Order(Enum):
-    CAN_INIT = 0
+    CAN_INIT = 10
+    MOTORS = 11
     RESET = 1
     MOTOR_1 = 2
     MOTOR_2 = 3
@@ -14,7 +15,6 @@ class Order(Enum):
     CAM = 6
     CLIP  = 7
     CAM_SWITCH = 8
-    # MOTORS = 9
     SHOOT = 9
 
 def write_order(f, order):
