@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #ifndef ORDER_H
 #define ORDER_H
 enum Order {
@@ -10,7 +11,7 @@ enum Order {
     CAM = 6,
     CLIP  = 7,
     CAM_SWITCH = 8,
-    MOTORS = 9,
+    SHOOT = 9,
 };
 typedef enum Order Order;
 #endif

@@ -14,7 +14,8 @@ class Order(Enum):
     CAM = 6
     CLIP  = 7
     CAM_SWITCH = 8
-    MOTORS = 9
+    # MOTORS = 9
+    SHOOT = 9
 
 def write_order(f, order):
     write_i8(f, order.value)
@@ -37,7 +38,7 @@ def open_serial_port():
     if len(ports) < 1:
         print('ports not found!')
         exit(-1)
-    return Serial(port=ports[0], baudrate=9600)
+    return Serial(port=ports[0], baudrate=115200)
 
 
 def read_order(f):

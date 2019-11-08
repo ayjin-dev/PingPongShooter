@@ -5,10 +5,8 @@ from numpy.linalg import norm
 from pickle import dump,load
 
 class ColorSeg(BaseProc):
-
-    def __init__(self, scale=0.7):
-        super().__init__(scale)
-
+    def __init__(self):
+        super().__init__()
         self.next_session = False
         self.paused = False
 

@@ -13,10 +13,12 @@ MCP_CAN CAN (SPI_CS_PIN);
 Servo arm_joint;
 Servo cam_pan;
 Servo clip;
+Servo shoot;
 
-#define CLIP_PIN 7
-#define ARM_JOINT_PIN 8
-#define CAM_PAN_PIN 10
+#define CAM_PAN_PIN A0
+#define ARM_JOINT_PIN A3
+#define CLIP_PIN A4
+#define SHOOT_PIN A5
 
 int16_t t_pwm = 5000;
 bool cam_switch = true;
@@ -30,6 +32,7 @@ bool can_init() {
     arm_joint.attach(ARM_JOINT_PIN);
     cam_pan.attach(CAM_PAN_PIN);
     clip.attach(CLIP_PIN);
+    shoot.attach(SHOOT_PIN);
 
     do {
         if(CAN_OK == CAN.begin(CAN_1000KBPS))
@@ -71,12 +74,10 @@ void reset_all(unsigned char motor_id) {
     t_vel: 0~+32757(int16_t, rpm),
     t_pos: -2147483648~+2147483647(int32_t, qc)
 */
-void move(unsigned char motor_id) {
+void move(unsigned char motor_id, int16_t t_vel) {
     unsigned char input_value[8] = {};
     unsigned char mode = 0x4;
-
-    // int16_t t_pwm = read_i16();
-    int16_t t_vel = read_i16();
+    // int16_t t_vel = read_i16();
 
     input_value[0] = (unsigned char)((t_pwm>>8)&0xff);
     input_value[1] = (unsigned char)((t_pwm)&0xff);
@@ -89,6 +90,11 @@ void move(unsigned char motor_id) {
 
     motor_id = id_modifier(motor_id, mode);
     CAN.sendMsgBuf(motor_id, 0, 8, input_value);
+}
+
+void send_spd(unsigned char motor_id) {
+    int16_t t_vel = read_i16();
+    move(motor_id, t_vel);
 }
 
 void set_arm_pos() {
@@ -104,6 +110,11 @@ void set_cam_pan_pos() {
 void set_clip_pos() {
     int16_t pos = read_i16();
     clip.write(pos);
+}
+
+void set_shoot_pos() {
+    int16_t pos = read_i16();
+    shoot.write(pos);
 }
 
 void get_msg_from_bytes() {
@@ -128,17 +139,17 @@ void get_msg_from_bytes() {
             }
             case MOTOR_1:
             {
-                move(MOTOR_1_ID);
+                send_spd(MOTOR_1_ID);
                 break;
             }
             case MOTOR_2:
             {
-                move(MOTOR_2_ID);
+                send_spd(MOTOR_2_ID);
                 break;
             }
             case MOTOR_BROADCAST:
             {
-                move(MOTOR_BROADCAST_ID);
+                send_spd(MOTOR_BROADCAST_ID);
                 break;
             }
             case ARM:
@@ -171,11 +182,17 @@ void get_msg_from_bytes() {
                 }
                 break;
             }
-            case MOTORS:
+            // case MOTORS:
+            // {
+            //     move(MOTOR_1_ID);
+            //     delay(0.01);
+            //     move(MOTOR_2_ID);
+            //     break;
+            // }
+            case SHOOT:
             {
-                move(MOTOR_1_ID);
-                delay(0.01);
-                move(MOTOR_2_ID);
+                set_shoot_pos();
+                break;
             }
         }
     }

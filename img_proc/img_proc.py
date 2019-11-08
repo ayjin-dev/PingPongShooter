@@ -1,13 +1,21 @@
 from threading import Thread
 from queue import Empty
-from .base_proc import BaseProc
+from .base_proc import BaseProc, SCALE
 from cv2 import WINDOW_AUTOSIZE, namedWindow, imshow, waitKey, destroyAllWindows,line
-from numpy import array,argmin
+from numpy import array,argmin,around
 from numpy.linalg import norm
 
 # left clipper, right clipper
-CLIPPER = (192, 193), (220, 193)
-READY_CLIP = (192, 165), (220, 165)
+# CLIPPER = (192, 193), (220, 193)
+# READY_CLIP = (192, 165), (220, 165)
+CLIPPER = (639, 562), (695, 562)
+READY_CLIP = (636, 500), (694, 500)
+
+SCALE_CLIPPER = around(array(CLIPPER)*SCALE).astype(int).tolist()
+SCALE_READY_CLIP = around(array(READY_CLIP)*SCALE).astype(int).tolist()
+SCALE_CLIPPER = tuple(SCALE_CLIPPER[0]), tuple(SCALE_CLIPPER[1])
+SCALE_READY_CLIP = tuple(SCALE_READY_CLIP[0]), tuple(SCALE_READY_CLIP[1])
+
 
 class Ball:
     def __init__(self):
@@ -36,8 +44,8 @@ class GreenZone:
             return None
 
 class ImgProc(BaseProc):
-    def __init__(self, scale, img_q, mde_q, debug=True):
-        super().__init__(scale)
+    def __init__(self, img_q, mde_q, debug=True):
+        super().__init__()
         self.debug = debug
         self.img_q = img_q
         self.mde_q = mde_q
@@ -48,11 +56,12 @@ class ImgProc(BaseProc):
         self.mode = None
         self.draw_mode = None
 
+
     def draw_ball(self, ball):
         if ball is not None:
             self.draw_ctr(ball, (255,0,0))
-        line(self.frame, CLIPPER[0], CLIPPER[1], (0,0,255), 2)
-        line(self.frame, READY_CLIP[0], READY_CLIP[1], (255,0,0), 2)
+        line(self.frame, SCALE_CLIPPER[0], SCALE_CLIPPER[1], (0,0,255), 2)
+        line(self.frame, SCALE_READY_CLIP[0], SCALE_READY_CLIP[1], (255,0,0), 2)
         # rectangle(self.frame, (x,y), (x+w,y+h), color, 2)
 
     def draw_green(self, green):

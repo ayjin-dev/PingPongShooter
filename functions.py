@@ -2,11 +2,11 @@ from numpy import array,argmin,around,cross,size,where
 from numpy.linalg import norm
 from time import time
 
-from img_proc.img_proc import CLIPPER, READY_CLIP
+from img_proc.img_proc import SCALE_CLIPPER, SCALE_READY_CLIP
 
 class PickBall:
     def __init__(self):
-        self.__searching = 10
+        self.__searching = 60
         self.__Kp = [.6, .6]
         self.__Ki = array([.001, .001])
         self.__Kd = array([.01, .01])
@@ -19,7 +19,7 @@ class PickBall:
         self.__should_run = False
         self.__last_spd = array([0.,0.])
 
-        self.clipper = array(READY_CLIP)
+        self.clipper = array(SCALE_READY_CLIP)
         self.__expect = sum(self.clipper)//2
         self.__expect[1] += 5
         self.__ready_for_clip = False
@@ -35,7 +35,7 @@ class PickBall:
             targ_p = ball[:2] + ball[-2:]//2
             if size(where((self.clipper[0] - targ_p)>0)[0]) == 0 and targ_p[0] < self.clipper[1][0]:
                 if not self.__ready_for_clip:
-                    self.clipper = array(CLIPPER)
+                    self.clipper = array(SCALE_CLIPPER)
                     self.__expect = sum(self.clipper)//2
                     self.__expect[1] += 20
                     self.__ready_for_clip = True
@@ -53,13 +53,22 @@ class PickBall:
             self.__last_time = time()
 
             spd = self.__Kp*err + self.__Ki*self.__err_sum + self.__Kd*(err_d / time_d)
-            print('spd:', spd)
+
             # lwspd, rwspd
             # target is in the left screen
             if spd[0] > 0:
-                spd = spd[1], spd[1] + spd[0]
+                spd = spd[1]+spd[0], spd[1]
             else:
-                spd = spd[1] - spd[0], spd[1]
+                if spd[1] > 0:
+                    spd = spd[1], spd[1] - spd[0]
+                else:
+                    spd = spd[1], spd[1]+spd[0]
+            # lwspd = rwspd = spd[1]
+            # if spd[0] > 0:
+            #     lwspd += spd[0]
+            # else:
+            #     rwspd -= spd[0]
+            # spd = lwspd, rwspd
 
         else:
             self.__found = False
@@ -69,6 +78,7 @@ class PickBall:
                 spd = (self.__searching,-self.__searching)
 
         spd = around(spd).astype(int)
+        # print('spd:', spd)
         __should_run = sum(self.__last_spd - spd) == 0
         self.__last_spd = spd
         if __should_run:
@@ -93,7 +103,7 @@ class GreenZone:
         self.__should_run = False
         self.__last_spd = array([0.,0.])
 
-        self.__expect = sum(array(CLIPPER))//2
+        self.__expect = sum(array(SCALE_CLIPPER))//2
 
     def run(self, green):
         if green is not None:
@@ -156,7 +166,7 @@ class GreenAim:
         self.__found = False
         self.__should_run = False
         self.__last_spd = 0
-        self.__expect = (sum(array(CLIPPER))//2)[0]
+        self.__expect = (sum(array(SCALE_CLIPPER))//2)[0]
 
     def run(self, coordinate):
         if coordinate is not True:

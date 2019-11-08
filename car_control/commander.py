@@ -65,6 +65,9 @@ class RoboCar():
     def set_clip(self, pos):
         self.__set_servos_pos(Order.CLIP, pos)
 
+    def set_shoot(self, pos):
+        self.__set_servos_pos(Order.SHOOT, pos)
+
     def rotate(self, vel=40, wait_time=2):
         self.speed_broadcast(vel)
         sleep(wait_time)
@@ -84,6 +87,7 @@ class CommandThread(Thread):
         self.cmd_q = cmd_q
         self.exit_event = exit_event
         self.car = RoboCar()
+        # sleep(.001)
         self.car.reset()
 
     def run(self):

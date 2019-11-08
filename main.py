@@ -5,18 +5,19 @@ from numpy import array,around
 
 from car_control.commander import CommandThread
 from img_proc.img_proc import ImageProcessingThread, ImgProc
+from img_proc.base_proc import SCALE
 from car_control.rst_serial import CustomQueue
 from functions import PickBall, GreenZone
 
 class mainControl:
-    def __init__(self, cmd_q, img_q, mde_q,scale):
+    def __init__(self, cmd_q, img_q, mde_q):
         self.cmd_clear = cmd_q.clear
         self.cmd_put = cmd_q.put_nowait
         self.img_get = img_q.get
         # self.img_clear = img_q.clear
         self.mde_q = mde_q
         self.exit = False
-        self.win_center = around(scale*array([1920,1080])*0.5).astype(int)
+        self.win_center = around(SCALE*array([1920,1080])*0.5).astype(int)
 
         self.n_full, self.n_total = 0,0
 
@@ -61,7 +62,7 @@ class mainControl:
             sleep(0.1)
             self.send('arm', 180)
             sleep(.8)
-            self.send('clip', 30)
+            self.send('clip', 15)
             sleep(0.1)
             self.stop()
             self.mde_q.put('green_zone')
@@ -69,7 +70,7 @@ class mainControl:
         elif state == 2:
             self.send('spst', 0)
             sleep(0.1)
-            self.send('clip', 27)
+            self.send('clip', 26)
         return False
 
     def green_zone(self,coordinate):
@@ -109,17 +110,16 @@ if __name__ == '__main__':
     exit_condition = Condition(condition_lock)
     exit_event = Event()
 
-    scale = 0.20
     debug = True# True
 
-    image_thread = ImageProcessingThread(ImgProc(scale, img_q, mde_q, debug), exit_condition)
+    image_thread = ImageProcessingThread(ImgProc(img_q, mde_q, debug), exit_condition)
 
     threads = [CommandThread(cmd_q, exit_event), image_thread]
     for thread in threads:
         thread.start()
 
-    sleep(1.32)
-    main_control = mainControl(cmd_q, img_q, mde_q, scale)
+    sleep(1.33)
+    main_control = mainControl(cmd_q, img_q, mde_q)
     main_control.run()
 
     exit_event.set()
