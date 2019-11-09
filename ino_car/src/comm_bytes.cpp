@@ -15,12 +15,12 @@ Servo cam_pan;
 Servo clip;
 Servo shoot;
 
-#define CAM_PAN_PIN A0
-#define ARM_JOINT_PIN A3
-#define CLIP_PIN A4
-#define SHOOT_PIN A5
+#define CAM_PAN_PIN 9
+#define ARM_JOINT_PIN 10
+#define CLIP_PIN 11
+#define SHOOT_PIN 12
 
-int16_t t_pwm = 5000;
+int16_t t_pwm = 3000;
 bool cam_switch = true;
 
 unsigned char reset_comm[8] = {0x55,0x55,0x55,0x55,0x55,0x55,0x55,0x55};
@@ -148,9 +148,10 @@ void get_msg_from_bytes() {
             case CAN_INIT:
             {
                 can_init();
-                // if(ok) {
-                //     write_order(CAN_INIT);
-                // }
+                bool ok = can_init();
+                if(ok) {
+                    write_order(CAN_INIT);
+                }
                 break;
             }
             case RESET:
@@ -158,7 +159,7 @@ void get_msg_from_bytes() {
                 reset_all(MOTOR_1_ID);
                 reset_all(MOTOR_2_ID);
 
-                // write_order(RESET);
+                write_order(RESET);
                 break;
             }
             case MOTOR_1:

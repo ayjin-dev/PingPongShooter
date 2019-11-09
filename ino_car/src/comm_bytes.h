@@ -2,7 +2,7 @@
 #define MOTOR_2_ID 0x04
 #define MOTOR_BROADCAST_ID 0x00
 
-#define BAUDRATE 115200
+#define BAUDRATE 9600
 
 bool can_init();
 void reset_all(unsigned char motor_id);

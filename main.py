@@ -14,7 +14,6 @@ class mainControl:
         self.cmd_clear = cmd_q.clear
         self.cmd_put = cmd_q.put_nowait
         self.img_get = img_q.get
-        # self.img_clear = img_q.clear
         self.mde_q = mde_q
         self.exit = False
         self.win_center = around(SCALE*array([1920,1080])*0.5).astype(int)
@@ -24,8 +23,10 @@ class mainControl:
         self.mode = [False, False]
         # self.sessions = [self.pick_ball]
 
-        self.mde_q.put('ball')
-        self.send('cam', 150)
+        # self.mde_q.put('ball')
+        self.mde_q.put('green_zone')
+
+        self.send('cam', 136)
 
     def send(self, o, p):
         try:
@@ -79,14 +80,15 @@ class mainControl:
             self.mode[1] = True
             self.GreenZone = GreenZone()
 
-        state, param = self.GreenZone.run()
-        if state == 0 and param is not None:
-            self.send('spds', param)
-        elif state == 1:
+        state, param = self.GreenZone.run(coordinate)
+        if param is not None:
+            if state == 0:
+                self.send('spds', param)
+            elif state == 2:
+                self.send('spst', param)
+        if state == 1:
+            self.send('spst', 0)
             return True
-        elif state == 2:
-            self.send('spst', param)
-
         return False
 
     def run(self):
@@ -94,7 +96,7 @@ class mainControl:
         while not self.exit:
             try:
                 coordinate = self.img_get()
-                if self.pick_ball(coordinate):
+                if self.green_zone(coordinate):
                     break
 
             except KeyboardInterrupt:
@@ -118,7 +120,7 @@ if __name__ == '__main__':
     for thread in threads:
         thread.start()
 
-    sleep(1.33)
+    sleep(1.7)
     main_control = mainControl(cmd_q, img_q, mde_q)
     main_control.run()
 

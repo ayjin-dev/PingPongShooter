@@ -4,6 +4,7 @@ from base_proc import BaseProc
 from numpy.linalg import norm
 from pickle import dump,load
 
+
 class ColorSeg(BaseProc):
     def __init__(self):
         super().__init__()
@@ -22,6 +23,7 @@ class ColorSeg(BaseProc):
             if not self.paused:
                 _, self.frame = self.cap.read()
                 self.img_resize()
+                print('mean:', np.mean(self.frame))
 
             cv.imshow('Pixel', self.frame)
 

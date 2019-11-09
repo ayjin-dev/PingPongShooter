@@ -2,8 +2,7 @@
 #ifndef ORDER_H
 #define ORDER_H
 enum Order {
-    CAN_INIT = 10,
-    MOTORS = 11,
+    CAN_INIT = 0,
     RESET = 1,
     MOTOR_1 = 2,
     MOTOR_2 = 3,
@@ -13,6 +12,7 @@ enum Order {
     CLIP  = 7,
     CAM_SWITCH = 8,
     SHOOT = 9,
+    MOTORS = 10,
 };
 typedef enum Order Order;
 #endif

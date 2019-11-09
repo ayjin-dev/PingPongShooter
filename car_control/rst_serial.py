@@ -5,8 +5,7 @@ from enum import Enum
 from queue import Queue
 
 class Order(Enum):
-    CAN_INIT = 10
-    MOTORS = 11
+    CAN_INIT = 0
     RESET = 1
     MOTOR_1 = 2
     MOTOR_2 = 3
@@ -16,6 +15,7 @@ class Order(Enum):
     CLIP  = 7
     CAM_SWITCH = 8
     SHOOT = 9
+    MOTORS = 10
 
 def write_order(f, order):
     write_i8(f, order.value)
@@ -38,7 +38,7 @@ def open_serial_port():
     if len(ports) < 1:
         print('ports not found!')
         exit(-1)
-    return Serial(port=ports[0], baudrate=115200)
+    return Serial(port=ports[0], baudrate=9600)
 
 
 def read_order(f):

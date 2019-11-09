@@ -5,16 +5,17 @@ from cv2 import WINDOW_AUTOSIZE, namedWindow, imshow, waitKey, destroyAllWindows
 from numpy import array,argmin,around
 from numpy.linalg import norm
 
+def scale_factor(x):
+    a,b = around(array(x)*SCALE).astype(int).tolist()
+    return tuple(a), tuple(b)
+
 # left clipper, right clipper
-# CLIPPER = (192, 193), (220, 193)
-# READY_CLIP = (192, 165), (220, 165)
 CLIPPER = (639, 562), (695, 562)
 READY_CLIP = (636, 500), (694, 500)
-
-SCALE_CLIPPER = around(array(CLIPPER)*SCALE).astype(int).tolist()
-SCALE_READY_CLIP = around(array(READY_CLIP)*SCALE).astype(int).tolist()
-SCALE_CLIPPER = tuple(SCALE_CLIPPER[0]), tuple(SCALE_CLIPPER[1])
-SCALE_READY_CLIP = tuple(SCALE_READY_CLIP[0]), tuple(SCALE_READY_CLIP[1])
+GREEN_ZONE = (657,600),(753,600)
+SCALE_CLIPPER = scale_factor(CLIPPER)
+SCALE_READY_CLIP = scale_factor(READY_CLIP)
+SCALE_GREEN_ZONE = scale_factor(GREEN_ZONE)
 
 
 class Ball:
@@ -62,13 +63,13 @@ class ImgProc(BaseProc):
             self.draw_ctr(ball, (255,0,0))
         line(self.frame, SCALE_CLIPPER[0], SCALE_CLIPPER[1], (0,0,255), 2)
         line(self.frame, SCALE_READY_CLIP[0], SCALE_READY_CLIP[1], (255,0,0), 2)
-        # rectangle(self.frame, (x,y), (x+w,y+h), color, 2)
 
     def draw_green(self, green):
         if green is not None:
             self.draw_ctr(green)
             x,y,w,h = green
-            line(self.frame, (x,y), (x+w,y), (0,255,0), 2)
+            line(self.frame, SCALE_GREEN_ZONE[0], SCALE_GREEN_ZONE[1], (255,0,0), 2)
+            line(self.frame, (x,y), (x+w,y), (255,0,0), 2)
 
 
     def select_mode(self, mode):
@@ -109,7 +110,6 @@ class ImgProc(BaseProc):
                 self.draw_mode(coordinate)
                 if coordinates is not None:
                     [self.draw_ctr(c,lw=1) for c in coordinates]
-                    pass
 
                 # print('coordinate:', coordinate)
                 imshow('main', self.frame)
