@@ -1,8 +1,8 @@
-from numpy import array,argmin,around,cross,size,where,clip,abs,prod
+from numpy import array,argmin,around,cross,size,where,clip,abs,prod,sum
 from numpy.linalg import norm
 from time import time
 
-from img_proc.img_proc import SCALE_CLIPPER, SCALE_READY_CLIP,SCALE_GREEN_ZONE,SCALE_WIN_CENTER,SCALE_BOTTOM_CENTER
+from img_proc.img_proc import SCALE_CLIPPER, SCALE_READY_CLIP,SCALE_GREEN_ZONE,SCALE_BOTTOM_CENTER
 
 SEARCHING = 30
 
@@ -80,20 +80,19 @@ class PickBall:
 class GreenZone:
     def __init__(self):
 
-        self.__Kp = array([1.1, 1.3])
-        self.__Ki = array([.001, .001])
-        self.__Kd = array([.03, .03])
-
+        self.__K  = array([[1.1, 1.3], [.001, .001], [.03, .03]])
         self.__last_time = 0
         self.__last_err = array([0.,0.])
         self.__err_sum = array([0.,0.])
 
-        self.__found = False
-        self.__aimed = False
         self.__last_spd = array([0.,0.])
-
         self.__expect = array(SCALE_BOTTOM_CENTER)
+
+        self.__found = False
         self.front = False
+        self.__aimed = False
+
+        self.err_tolerance = array([10,30])
 
     def run(self, green):
         if green is not None:
@@ -101,6 +100,7 @@ class GreenZone:
                 self.__found = True
                 self.__aimed = False
                 self.green_aim = GreenAim()
+                self.__aimed = False
 
             if not self.__aimed:
                 state = self.green_aim.run(green)
@@ -115,59 +115,39 @@ class GreenZone:
                     return 0, None
             else:
                 if not self.front:
-                    targ_p = green[:2] + (green[2]//2, green[3])
+                    targ_p = green[:2] + green[-2:]//(2,1)
                 else:
                     targ_p = green[:2] + (green[2]//2, 0)
                 err = self.__expect - targ_p
-                # print('err:',err, 'abs(err) - (3,1)< 0:',abs(err) - (10,30))
-                if prod(abs(err) - (10,30) < 0)==1:
+                if prod(abs(err) - self.err_tolerance < 0):
                     if self.front:
-                        # print('enter green')
                         return 1, None
                     self.front = True
-                    self.__Kp = self.__Kp * 0.7
-                    self.__Ki = array([.001, .001])
-                    self.__Kd = array([.02, .02])
+                    self.__K  = array([self.__K[0]*0.7, [.001, .001], [.02, .02]])
                     self.__last_err = array([0,0])
                     self.__last_time = time()
                     self.__err_sum = array([0.,0.])
                     return 2, 0
 
-
-                err_d = err - self.__last_err
-                time_d = time() - self.__last_time
-                self.__err_sum += err
+                err_d = (err - self.__last_err)/(time() - self.__last_time)
                 self.__last_err = err
                 self.__last_time = time()
-                spd = self.__Kp*err + self.__Ki*self.__err_sum + self.__Kd*(err_d/time_d)
-                lwspd, rwspd = spd[1],spd[1]
-                if spd[0] > 0:
-                    lwspd = spd[1] + spd[0]
-                elif spd[0] < 0:
-                    rwspd = spd[1] - spd[0]
-                spd = lwspd, rwspd
+                self.__err_sum += err
+                spd = sum((err, self.__err_sum, err_d) * self.__K, axis=0)
+                spd = (sum(spd), spd[1]) if spd[0]>0 else (spd[1], spd[1] - spd[0])
         else:
             self.__aimed = False
             self.__found = False
-            if self.__last_err[0] > 0:
-                spd = (-SEARCHING,SEARCHING)
-            else:
-                spd = (SEARCHING,-SEARCHING)
+            spd = SEARCHING * array((-1,1) if self.__last_err[0]>0 else (1,-1))
 
         spd = around(spd).astype(int)
-        __should_run = sum(self.__last_spd - spd) == 0
+        should_run = sum(self.__last_spd - spd) == 0
         self.__last_spd = spd
-        if __should_run:
-            return 0,(int(spd[0]), int(spd[1]))
-        else:
-            return 0,None
-
+        return 0, [int(spd[0]), int(spd[1])] if should_run else None
 
 class GreenAim:
     def __init__(self):
-        self.__Kp = .75
-        self.__Ki = 0
-        self.__Kd = 0.001
+        self.__K  = array([.75, 0, 0.001])
 
         self.__last_time = 0
         self.__last_err = 0
@@ -175,30 +155,25 @@ class GreenAim:
 
         self.__found = False
         self.__last_spd = 0
-        self.__expect = (sum(array(SCALE_GREEN_ZONE))//2)[0]
+        self.__expect = SCALE_BOTTOM_CENTER[0]
 
     def run(self, coordinate):
-        # if coordinate is not True:
         if not self.__found:
             self.__last_err = 0
             self.__last_time = time()
             self.__err_sum = 0
             self.__found = True
 
-        x,_,w,_ = coordinate
-        targ_p = x + w//2
+        targ_p = sum(coordinate[[0,2]] // (1,2))
         err = self.__expect - targ_p
         if abs(err) < 5:
             return 1,None
-        err_d = err - self.__last_err
-        time_d = time() - self.__last_time
+        err_d = (err - self.__last_err)/(time() - self.__last_time)
         self.__err_sum += err
         self.__last_err = err
         self.__last_time = time()
-        spd = self.__Kp*err + self.__Ki*self.__err_sum + self.__Kd*(err_d/time_d)
-
+        spd = sum((err, self.__err_sum, err_d) * self.__K)
         spd = clip(spd, -100, 100)
-
         spd = around(spd).astype(int)
         __should_run = self.__last_spd != spd
         self.__last_spd = spd

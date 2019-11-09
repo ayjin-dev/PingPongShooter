@@ -9,7 +9,6 @@ def scale_factor(x):
     a,b = around(array(x)*SCALE).astype(int).tolist()
     return tuple(a), tuple(b)
 
-SCALE_WIN_CENTER = tuple((RESOLUTIONS * SCALE).astype(int) //2)
 SCALE_BOTTOM_CENTER =  tuple((RESOLUTIONS * SCALE).astype(int) // (2,1))
 # left clipper, right clipper
 CLIPPER = (639, 562), (695, 562)
@@ -70,7 +69,6 @@ class ImgProc(BaseProc):
         if green is not None:
             self.draw_ctr(green)
             x,y,w,h = green
-            line(self.frame, SCALE_GREEN_ZONE[0], SCALE_GREEN_ZONE[1], (255,0,0), 2)
             line(self.frame, (x,y), (x+w,y), (255,0,0), 2)
 
 
