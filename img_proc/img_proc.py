@@ -1,6 +1,6 @@
 from threading import Thread
 from queue import Empty
-from .base_proc import BaseProc, SCALE
+from .base_proc import BaseProc, SCALE,RESOLUTIONS
 from cv2 import WINDOW_AUTOSIZE, namedWindow, imshow, waitKey, destroyAllWindows,line
 from numpy import array,argmin,around
 from numpy.linalg import norm
@@ -9,10 +9,12 @@ def scale_factor(x):
     a,b = around(array(x)*SCALE).astype(int).tolist()
     return tuple(a), tuple(b)
 
+SCALE_WIN_CENTER = tuple((RESOLUTIONS * SCALE).astype(int) //2)
+SCALE_BOTTOM_CENTER =  tuple((RESOLUTIONS * SCALE).astype(int) // (2,1))
 # left clipper, right clipper
 CLIPPER = (639, 562), (695, 562)
 READY_CLIP = (636, 500), (694, 500)
-GREEN_ZONE = (657,600),(753,600)
+GREEN_ZONE = (620,600),(660,600)
 SCALE_CLIPPER = scale_factor(CLIPPER)
 SCALE_READY_CLIP = scale_factor(READY_CLIP)
 SCALE_GREEN_ZONE = scale_factor(GREEN_ZONE)

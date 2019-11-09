@@ -2,16 +2,16 @@ from numpy import array, argsort
 from pickle import load
 
 RESOLUTIONS = array([1280, 720])# array([1920, 1080])
-NUM_OF_MAX_AREAS = 10
 SCALE = 0.25
+
+NUM_OF_MAX_AREAS = 10
+CAMERA = 0
 
 from cv2 import CAP_PROP_FRAME_WIDTH,CAP_PROP_FRAME_HEIGHT,VideoCapture,MORPH_OPEN,COLOR_BGR2GRAY,RETR_TREE, CHAIN_APPROX_SIMPLE, resize, cvtColor, COLOR_BGR2YCrCb,inRange,bitwise_and,morphologyEx,findContours,contourArea,boundingRect,rectangle,circle,line, threshold, THRESH_BINARY, CAP_PROP_AUTO_EXPOSURE, CAP_PROP_EXPOSURE
 class BaseProc(object):
     def __init__(self):
-        self.cap = VideoCapture(2)
-        scale = (RESOLUTIONS * SCALE).astype(int)
-        self.win_center = tuple(scale //2)
-        self.__scale = tuple(scale)
+        self.cap = VideoCapture(CAMERA)
+        self.__scale = tuple((RESOLUTIONS * SCALE).astype(int))
         self.cap.set(CAP_PROP_FRAME_WIDTH, RESOLUTIONS[0])
         self.cap.set(CAP_PROP_FRAME_HEIGHT, RESOLUTIONS[1])
         self.cap.set(CAP_PROP_AUTO_EXPOSURE, 1)
@@ -57,7 +57,6 @@ class BaseProc(object):
         rectangle(self.frame, (x,y), (x+w,y+h), color, lw)
         target_center = x+w//2, y+h//2
         circle(self.frame, target_center, 2, color,-1)
-        # line(self.frame, target_center, self.win_center, color, 2)
 
     def change_color(self, color):
         print('change color:', color)

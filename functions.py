@@ -1,8 +1,8 @@
-from numpy import array,argmin,around,cross,size,where,clip
+from numpy import array,argmin,around,cross,size,where,clip,abs,prod
 from numpy.linalg import norm
 from time import time
 
-from img_proc.img_proc import SCALE_CLIPPER, SCALE_READY_CLIP,SCALE_GREEN_ZONE
+from img_proc.img_proc import SCALE_CLIPPER, SCALE_READY_CLIP,SCALE_GREEN_ZONE,SCALE_WIN_CENTER,SCALE_BOTTOM_CENTER
 
 SEARCHING = 30
 
@@ -77,8 +77,6 @@ class PickBall:
         else:
             return 0,None
 
-
-
 class GreenZone:
     def __init__(self):
 
@@ -94,11 +92,8 @@ class GreenZone:
         self.__aimed = False
         self.__last_spd = array([0.,0.])
 
-        self.__expect = sum(array(SCALE_GREEN_ZONE))//2
-        self.clipper = array(SCALE_GREEN_ZONE)
+        self.__expect = array(SCALE_BOTTOM_CENTER)
         self.front = False
-
-        print('time:', time())
 
     def run(self, green):
         if green is not None:
@@ -123,21 +118,22 @@ class GreenZone:
                     targ_p = green[:2] + (green[2]//2, green[3])
                 else:
                     targ_p = green[:2] + (green[2]//2, 0)
-                if size(where((self.clipper[0] - targ_p)>0)[0]) == 0 and targ_p[0] < self.clipper[1][0]:
+                err = self.__expect - targ_p
+                # print('err:',err, 'abs(err) - (3,1)< 0:',abs(err) - (10,30))
+                if prod(abs(err) - (10,30) < 0)==1:
                     if self.front:
-                        print('time:', time())
-                        print('exit!')
+                        # print('enter green')
                         return 1, None
                     self.front = True
-                    print('time:', time())
-                    print('enter green zone')
-                    return 2, 0
                     self.__Kp = self.__Kp * 0.7
                     self.__Ki = array([.001, .001])
                     self.__Kd = array([.02, .02])
+                    self.__last_err = array([0,0])
+                    self.__last_time = time()
+                    self.__err_sum = array([0.,0.])
+                    return 2, 0
 
 
-                err = self.__expect - targ_p
                 err_d = err - self.__last_err
                 time_d = time() - self.__last_time
                 self.__err_sum += err
