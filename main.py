@@ -23,8 +23,8 @@ class mainControl:
         self.mode = [False, False]
         # self.sessions = [self.pick_ball]
 
-        # self.mde_q.put('ball')
-        self.mde_q.put('green_zone')
+        self.mde_q.put('ball')
+        # self.mde_q.put('green_zone')
 
         self.send('cam', 136)
 
@@ -92,11 +92,10 @@ class mainControl:
         return False
 
     def run(self):
-
         while not self.exit:
             try:
                 coordinate = self.img_get()
-                if self.green_zone(coordinate):
+                if self.pick_ball(coordinate):
                     break
 
             except KeyboardInterrupt:
