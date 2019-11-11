@@ -6,11 +6,11 @@ from queue import Empty
 
 from time import sleep
 
-ARM_DOWN = 30
+ARM_DOWN = 27
 ARM_UP = 178
 CLIPPER_CLOSE = 0
-CLIPPER_CLIP = 2
-CLIPPER_OPEN = 30
+CLIPPER_CLIP = 0
+CLIPPER_OPEN = 25
 CAM_VIEW = 145
 CAM_FULL_VIEW = 149
 

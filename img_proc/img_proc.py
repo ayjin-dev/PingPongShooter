@@ -11,8 +11,8 @@ def scale_factor(x):
 
 SCALE_BOTTOM_CENTER =  tuple((RESOLUTIONS * SCALE).astype(int) // (2,1))
 # left clipper, right clipper
-READY_CLIP = (684, 480)
-CLIPPER = (684, 590)
+READY_CLIP = (684, 540)
+CLIPPER = (684, 640)
 
 SCALE_CLIPPER = scale_factor(CLIPPER)
 SCALE_READY_CLIP = scale_factor(READY_CLIP)

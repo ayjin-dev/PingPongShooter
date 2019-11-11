@@ -5,11 +5,9 @@ from numpy import array,around
 
 from car_control.commander import CommandThread,ARM_DOWN,ARM_UP,CLIPPER_CLOSE,CLIPPER_CLIP,CLIPPER_OPEN,CAM_VIEW,CAM_FULL_VIEW
 from img_proc.img_proc import ImageProcessingThread, ImgProc
-from img_proc.base_proc import SCALE
+from img_proc.base_proc import SCALE,RESOLUTIONS
 from car_control.rst_serial import CustomQueue
 from functions import PickBall, GreenZone
-
-
 
 class mainControl:
     def __init__(self, cmd_q, img_q, mde_q):
@@ -18,7 +16,7 @@ class mainControl:
         self.img_get = img_q.get
         self.mde_q = mde_q
         self.exit = False
-        self.win_center = around(SCALE*array([1920,1080])*0.5).astype(int)
+        self.win_center = around(SCALE*RESOLUTIONS*0.5).astype(int)
         self.n_full, self.n_total = 0,0
         self.mode = [False, False]
         self.mde_q.put('ball')
@@ -57,8 +55,10 @@ class mainControl:
             sleep(0.01)
             self.send('clip', CLIPPER_CLIP)
             sleep(0.1)
-            self.send('spds', (-60,-60))
-            sleep(0.02)
+            self.send('spds', (-150,-150))
+            sleep(0.1)
+            self.send('spst', 0)
+            sleep(0.01)
             self.send('arm', ARM_UP)
             sleep(.8)
             self.send('clip', CLIPPER_OPEN)
@@ -70,6 +70,8 @@ class mainControl:
             self.send('spst', 0)
             sleep(0.1)
             self.send('clip', CLIPPER_OPEN)
+        elif state == 3:
+            self.send('clip', CLIPPER_CLOSE)
         return False
 
     def green_zone(self,coordinate):
