@@ -38,7 +38,7 @@ def open_serial_port():
     if len(ports) < 1:
         print('ports not found!')
         exit(-1)
-    return Serial(port=ports[0], baudrate=9600)
+    return Serial(port=ports[0], baudrate=115200)
 
 
 def read_order(f):

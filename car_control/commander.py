@@ -6,6 +6,14 @@ from queue import Empty
 
 from time import sleep
 
+ARM_DOWN = 30
+ARM_UP = 178
+CLIPPER_CLOSE = 0
+CLIPPER_CLIP = 2
+CLIPPER_OPEN = 30
+CAM_VIEW = 145
+CAM_FULL_VIEW = 149
+
 class RoboCar():
     def __init__(self):
         self._serial_file = open_serial_port()
@@ -108,7 +116,8 @@ class CommandThread(Thread):
         self.cmd_q = cmd_q
         self.exit_event = exit_event
         self.car = RoboCar()
-        sleep(.2)
+        self.car.set_cam(CAM_VIEW)
+
         self.car.reset()
 
     def run(self):

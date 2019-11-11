@@ -15,10 +15,10 @@ Servo cam_pan;
 Servo clip;
 Servo shoot;
 
-#define CAM_PAN_PIN 9
-#define ARM_JOINT_PIN 10
-#define CLIP_PIN 11
-#define SHOOT_PIN 12
+#define CAM_PAN_PIN 3
+#define ARM_JOINT_PIN 6
+#define CLIP_PIN 9
+#define SHOOT_PIN 13
 
 int16_t t_pwm = 3000;
 bool cam_switch = true;

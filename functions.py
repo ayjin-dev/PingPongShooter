@@ -1,36 +1,40 @@
-from numpy import array,argmin,around,cross,size,where,clip,abs,prod,sum
+from numpy import array,argmin,around,cross,size,where,clip,abs,prod,sum,searchsorted
 from numpy.linalg import norm
 from time import time
 
-from img_proc.img_proc import SCALE_CLIPPER, SCALE_READY_CLIP,SCALE_GREEN_ZONE,SCALE_BOTTOM_CENTER
+from img_proc.img_proc import SCALE_CLIPPER, SCALE_READY_CLIP,SCALE_BOTTOM_CENTER
 
-SEARCHING = 30
+SEARCHING = 10
 
 class PickBall:
     def __init__(self):
+        self.__err_rng = array([[5, 15, 30,45,70,100], [5, 15, 30,45,70,100]])
+        self.__Kp = array([[1.7, 1.2, 1, 0.9, 0.7,0.6, 0.5], [1.5, 1.3, 1, 0.8, 0.9, 0.7, 0.6]])
         self.__last_spd = array([0.,0.])
         self.__reset_pid()
+        self.__expect = array(SCALE_READY_CLIP)
         self.states = {'found': False, 'ready': False}
-        self.clipper = array(SCALE_READY_CLIP)
-        self.__expect = sum(self.clipper, axis=0)//2 + (0,5)
-        self.states = {'found': False, 'ready': False}
+        self.err_tolerance = array([2,2])
 
-    def run(self, ball):
+    def run(self, ball, balls):
         if ball is not None:
             if not self.states['found']:
                 self.__reset_pid()
                 self.states['found'] = True
 
-            targ_p = ball[:2] + ball[-2:]//2
-            if size(where((self.clipper[0] - targ_p)>0)[0]) == 0 and targ_p[0] < self.clipper[1][0]:
+            targ_p = (ball[:2] + (ball[2]//2, 1))
+            err = self.__expect - targ_p
+            if prod(abs(err) - self.err_tolerance < 0) or sum(prod(abs(self.__expect - array([(b[:2] + (b[2]//2, 1)) for b in balls[-3:]])) - self.err_tolerance < 0)) > 0:
+                # size(where((self.clipper[0] - targ_p)>0)[0]) == 0 and targ_p[0] < self.clipper[1][0]
                 if not self.states['ready']:
-                    self.clipper = array(SCALE_CLIPPER)
-                    self.__expect = sum(self.clipper, axis=0)//2 + (0,20)
+                    self.err_tolerance = array([15,10])
+                    self.__expect = array(SCALE_CLIPPER)
                     self.states = {'found': False, 'ready': True}
                     return 2, None
-                else:
-                    return 1,None
-            err = self.__expect - targ_p
+                return 1,None
+
+
+            self.update_Kp(err)
             err_d = (err - self.__last_err)/(time() - self.__last_time)
             self.__err_sum += err
             self.__last_err,self.__last_time = err, time()
@@ -43,15 +47,19 @@ class PickBall:
         spd = around(spd).astype(int)
         should_run = sum(self.__last_spd - spd) == 0
         self.__last_spd = spd
-        return 0, (int(spd[0]), int(spd[1])) if should_run else None
+        return 0, spd.tolist() if should_run else None
 
     def __reset_pid(self):
         # Kp, Ki, Kd
-        self.__K  = array([[0.9, 1.2], [.001, .001], [.03, .03]])
+        self.__K  = array([[0.0, 0.0], [.00, .00], [.02, .02]])
         self.__last_time = time()
         # x,y
         self.__last_err = array([0.,0.])
         self.__err_sum = array([0.,0.])
+
+    def update_Kp(self, err):
+        err = abs(err)
+        self.__K[0] = array([self.__Kp[0][searchsorted(self.__err_rng[0], err[0])], self.__Kp[1][searchsorted(self.__err_rng[1], err[1])]])
 
 class GreenZone:
     def __init__(self):
@@ -97,7 +105,7 @@ class GreenZone:
         spd = around(spd).astype(int)
         should_run = sum(self.__last_spd - spd) == 0
         self.__last_spd = spd
-        return 0, (int(spd[0]), int(spd[1])) if should_run else None
+        return 0, spd.tolist() if should_run else None
 
     def __reset_pid(self, scale_pid=1.0):
         # Kp, Ki, Kd

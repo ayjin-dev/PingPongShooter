@@ -3,11 +3,13 @@ from threading import Lock, Condition, Event
 from time import sleep
 from numpy import array,around
 
-from car_control.commander import CommandThread
+from car_control.commander import CommandThread,ARM_DOWN,ARM_UP,CLIPPER_CLOSE,CLIPPER_CLIP,CLIPPER_OPEN,CAM_VIEW,CAM_FULL_VIEW
 from img_proc.img_proc import ImageProcessingThread, ImgProc
 from img_proc.base_proc import SCALE
 from car_control.rst_serial import CustomQueue
 from functions import PickBall, GreenZone
+
+
 
 class mainControl:
     def __init__(self, cmd_q, img_q, mde_q):
@@ -17,16 +19,13 @@ class mainControl:
         self.mde_q = mde_q
         self.exit = False
         self.win_center = around(SCALE*array([1920,1080])*0.5).astype(int)
-
         self.n_full, self.n_total = 0,0
-
         self.mode = [False, False]
-        # self.sessions = [self.pick_ball]
-
         self.mde_q.put('ball')
-        # self.mde_q.put('green_zone')
+        self.send('arm', ARM_DOWN)
+        self.send('clip', CLIPPER_CLOSE)
 
-        self.send('cam', 136)
+        # self.mde_q.put('green_zone')
 
     def send(self, o, p):
         try:
@@ -40,30 +39,29 @@ class mainControl:
     def stop(self):
         self.cmd_clear()
         self.send('spst', 0)
-        print('stop!')
         print('full:{}, total:{}'.format(self.n_full, self.n_total))
 
-    def pick_ball(self, coordinate):
+    def pick_ball(self, coordinate, coordinates):
         if not self.mode[0]:
-            print('start picking a ball')
             self.mode[0] = True
-            self.send('clip', 0)
-            self.send('arm', 12)
+            self.send('clip', CLIPPER_CLOSE)
+            self.send('arm', ARM_DOWN)
             sleep(0.02)
-            self.send('cam_swtch', False)
             self.PickBall = PickBall()
 
-        state, param = self.PickBall.run(coordinate)
+        state, param = self.PickBall.run(coordinate, coordinates)
         if state == 0 and param is not None:
             self.send('spds', param)
         elif state == 1:
             self.send('spst', 0)
             sleep(0.01)
-            self.send('clip', 4)
+            self.send('clip', CLIPPER_CLIP)
             sleep(0.1)
-            self.send('arm', 180)
+            self.send('spds', (-60,-60))
+            sleep(0.02)
+            self.send('arm', ARM_UP)
             sleep(.8)
-            self.send('clip', 15)
+            self.send('clip', CLIPPER_OPEN)
             sleep(0.1)
             self.stop()
             self.mde_q.put('green_zone')
@@ -71,7 +69,7 @@ class mainControl:
         elif state == 2:
             self.send('spst', 0)
             sleep(0.1)
-            self.send('clip', 26)
+            self.send('clip', CLIPPER_OPEN)
         return False
 
     def green_zone(self,coordinate):
@@ -94,8 +92,8 @@ class mainControl:
     def run(self):
         while not self.exit:
             try:
-                coordinate = self.img_get()
-                if self.pick_ball(coordinate):
+                coordinate,coordinates = self.img_get()
+                if self.pick_ball(coordinate, coordinates):
                     break
 
             except KeyboardInterrupt:

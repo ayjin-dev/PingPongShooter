@@ -23,7 +23,6 @@ class ColorSeg(BaseProc):
             if not self.paused:
                 _, self.frame = self.cap.read()
                 self.img_resize()
-                print('mean:', np.mean(self.frame))
 
             cv.imshow('Pixel', self.frame)
 

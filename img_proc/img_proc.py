@@ -6,17 +6,16 @@ from numpy import array,argmin,around
 from numpy.linalg import norm
 
 def scale_factor(x):
-    a,b = around(array(x)*SCALE).astype(int).tolist()
-    return tuple(a), tuple(b)
+    return around(array(x)*SCALE).astype(int).tolist()
+
 
 SCALE_BOTTOM_CENTER =  tuple((RESOLUTIONS * SCALE).astype(int) // (2,1))
 # left clipper, right clipper
-CLIPPER = (639, 562), (695, 562)
-READY_CLIP = (636, 500), (694, 500)
-GREEN_ZONE = (620,600),(660,600)
+READY_CLIP = (684, 480)
+CLIPPER = (684, 590)
+
 SCALE_CLIPPER = scale_factor(CLIPPER)
 SCALE_READY_CLIP = scale_factor(READY_CLIP)
-SCALE_GREEN_ZONE = scale_factor(GREEN_ZONE)
 
 
 class Ball:
@@ -30,7 +29,6 @@ class Ball:
             else:
                 self.__ball = coordinates[-1]
                 self.__found = True
-                print('ball found')
             return self.__ball
         else:
             return None
@@ -62,8 +60,6 @@ class ImgProc(BaseProc):
     def draw_ball(self, ball):
         if ball is not None:
             self.draw_ctr(ball, (255,0,0))
-        line(self.frame, SCALE_CLIPPER[0], SCALE_CLIPPER[1], (0,0,255), 2)
-        line(self.frame, SCALE_READY_CLIP[0], SCALE_READY_CLIP[1], (255,0,0), 2)
 
     def draw_green(self, green):
         if green is not None:
@@ -104,7 +100,7 @@ class ImgProc(BaseProc):
             coordinates = self.select_area()
 
             coordinate = self.mode.run(coordinates)
-            self.img_q.put(item=coordinate, block=False)
+            self.img_q.put(item=(coordinate,coordinates), block=False)
 
             if self.debug:
                 self.draw_mode(coordinate)

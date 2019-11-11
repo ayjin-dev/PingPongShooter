@@ -2,10 +2,11 @@ from numpy import array, argsort
 from pickle import load
 
 RESOLUTIONS = array([1280, 720])# array([1920, 1080])
-SCALE = 0.25
+SCALE = 0.2
+# SCALE = 1.0
 
 NUM_OF_MAX_AREAS = 10
-CAMERA = 0
+CAMERA = 2
 
 from cv2 import CAP_PROP_FRAME_WIDTH,CAP_PROP_FRAME_HEIGHT,VideoCapture,MORPH_OPEN,COLOR_BGR2GRAY,RETR_TREE, CHAIN_APPROX_SIMPLE, resize, cvtColor, COLOR_BGR2YCrCb,inRange,bitwise_and,morphologyEx,findContours,contourArea,boundingRect,rectangle,circle,line, threshold, THRESH_BINARY, CAP_PROP_AUTO_EXPOSURE, CAP_PROP_EXPOSURE
 class BaseProc(object):
