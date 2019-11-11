@@ -39,7 +39,7 @@ class mainControl:
         self.send('spst', 0)
         print('full:{}, total:{}'.format(self.n_full, self.n_total))
 
-    def pick_ball(self, coordinate, coordinates):
+    def pick_ball(self, coordinate):
         if not self.mode[0]:
             self.mode[0] = True
             self.send('clip', CLIPPER_CLOSE)
@@ -47,7 +47,7 @@ class mainControl:
             sleep(0.02)
             self.PickBall = PickBall()
 
-        state, param = self.PickBall.run(coordinate, coordinates)
+        state, param = self.PickBall.run(coordinate)
         if state == 0 and param is not None:
             self.send('spds', param)
         elif state == 1:
@@ -94,8 +94,8 @@ class mainControl:
     def run(self):
         while not self.exit:
             try:
-                coordinate,coordinates = self.img_get()
-                if self.pick_ball(coordinate, coordinates):
+                coordinate = self.img_get()
+                if self.pick_ball(coordinate):
                     break
 
             except KeyboardInterrupt:

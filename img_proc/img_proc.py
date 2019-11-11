@@ -12,7 +12,7 @@ def scale_factor(x):
 SCALE_BOTTOM_CENTER =  tuple((RESOLUTIONS * SCALE).astype(int) // (2,1))
 # left clipper, right clipper
 READY_CLIP = (684, 540)
-CLIPPER = (684, 640)
+CLIPPER = (684, 660)
 
 SCALE_CLIPPER = scale_factor(CLIPPER)
 SCALE_READY_CLIP = scale_factor(READY_CLIP)
@@ -100,7 +100,7 @@ class ImgProc(BaseProc):
             coordinates = self.select_area()
 
             coordinate = self.mode.run(coordinates)
-            self.img_q.put(item=(coordinate,coordinates), block=False)
+            self.img_q.put(item=coordinate, block=False)
 
             if self.debug:
                 self.draw_mode(coordinate)
