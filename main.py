@@ -19,11 +19,14 @@ class mainControl:
         self.win_center = around(SCALE*RESOLUTIONS*0.5).astype(int)
         self.n_full, self.n_total = 0,0
         self.mode = [False, False]
-        self.mde_q.put('ball')
-        self.send('arm', ARM_DOWN)
-        self.send('clip', CLIPPER_CLOSE)
 
-        # self.mde_q.put('green_zone')
+        # self.mde_q.put('ball')
+        # self.send('arm', ARM_DOWN)
+        # self.send('clip', CLIPPER_CLOSE)
+
+        self.send('arm', ARM_UP)
+        self.send('clip', CLIPPER_OPEN)
+        self.mde_q.put('green_zone')
 
     def send(self, o, p):
         try:
@@ -36,6 +39,8 @@ class mainControl:
 
     def stop(self):
         self.cmd_clear()
+        # self.send('spds', (-200, -200))
+        # sleep(1.2)
         self.send('spst', 0)
         print('full:{}, total:{}'.format(self.n_full, self.n_total))
 
@@ -95,7 +100,7 @@ class mainControl:
         while not self.exit:
             try:
                 coordinate = self.img_get()
-                if self.pick_ball(coordinate):
+                if self.green_zone(coordinate):
                     break
 
             except KeyboardInterrupt:

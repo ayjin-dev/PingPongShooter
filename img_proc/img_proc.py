@@ -8,8 +8,8 @@ from numpy.linalg import norm
 def scale_factor(x):
     return around(array(x)*SCALE).astype(int).tolist()
 
-
-SCALE_BOTTOM_CENTER =  tuple((RESOLUTIONS * SCALE).astype(int) // (2,1))
+prefer_distance = 20
+SCALE_BOTTOM_CENTER =  tuple((RESOLUTIONS * SCALE).astype(int) // (2,1) - (0, prefer_distance))
 # left clipper, right clipper
 READY_CLIP = (684, 540)
 CLIPPER = (684, 660)
@@ -66,6 +66,7 @@ class ImgProc(BaseProc):
             self.draw_ctr(green)
             x,y,w,h = green
             line(self.frame, (x,y), (x+w,y), (255,0,0), 2)
+            line(self.frame, (SCALE_BOTTOM_CENTER[0]-30, SCALE_BOTTOM_CENTER[1]), (SCALE_BOTTOM_CENTER[0]+30, SCALE_BOTTOM_CENTER[1]), (0,0,255), 2)
 
 
     def select_mode(self, mode):

@@ -1,17 +1,13 @@
 from numpy import array,argmin,around,cross,size,where,clip,abs,prod,sum,searchsorted
 from numpy.linalg import norm
-from time import time
+from time import time, sleep
 
 from img_proc.img_proc import SCALE_CLIPPER, SCALE_READY_CLIP,SCALE_BOTTOM_CENTER
 
-SEARCHING = 10
+SEARCHING = 150
 
 class PickBall:
     def __reset_pid(self):
-        self.Kp_step = array([1, 1]) * .05
-        self.Kp_base = array([1, 1]) * 2.0
-        self.Kp_min = array([.81, .8])
-
         self.__K  = array([[0.0, 0.0], [.2, .2]])
         self.__last_err = array([0.,0.])
 
@@ -26,6 +22,10 @@ class PickBall:
             self.states['ready'] = False
 
     def __init__(self):
+        self.Kp_step = array([1, 1]) * .05
+        self.Kp_base = array([1, 1]) * 2.0
+        self.Kp_min = array([.81, .8])
+
         self.err_difference = 5
         self.escape = array([20,50])
         self.__last_spd = array([0.,0.])
@@ -61,22 +61,36 @@ class PickBall:
         spd = around(spd).astype(int)
         should_run = sum(self.__last_spd - spd) != 0
         self.__last_spd = spd
-        # NOTE
-        # if should_run:
-        #     print('spd:{}, err:{}, Kp:{}, Kd:{}'.format(spd,err,self.__K[0], self.__K[1]))
-
         return 0, spd.tolist() if should_run else None
 
     def update_Kp(self, err):
         self.__K[0] = clip(self.Kp_base + self.Kp_step*((0, 1)- abs(err)), self.Kp_min, self.Kp_base)
 
 class GreenZone:
+    def __reset_pid(self,):
+        self.__last_err = array([0.,0.])
+        self.__last_time = time()
+        self.__last_spd = array([0.1,0])
+        self.__last_targ = array([0.,0.])
+
+        self.__K  = array([[0.,0.], self.Kd])
+
     def __init__(self):
-        self.__last_spd = array([0.,0.])
-        self.__reset_pid()
+        xerr_rng = [2, 5, 10, 25, 50, 95, 120]
+        yerr_rng = [2, 5, 10, 25, 50, 95, 120]
+        Kp_x = [1, 1.5, 1.7, 1.5, 2.7, 4.1, 2.7, 2.3]
+        Kp_y = [1, 1.2, 1.5, 1.3, 2.5, 3.9, 2.6, 2.0]
+
+        self.__err_rng = array([xerr_rng, yerr_rng])
+        self.Kp = array([Kp_x, Kp_y])
+        self.Kd = [0., 0.]
+
+        self.err_tolerance = array([2,2])
+
         self.__expect = array(SCALE_BOTTOM_CENTER)
-        self.states = {'found': False, 'front': False, 'aimed': False}
-        self.err_tolerance = array([10,30])
+
+        self.__reset_pid()
+        self.states = {'found': False, 'aimed': False}
 
     def run(self, green):
         if green is not None:
@@ -86,64 +100,67 @@ class GreenZone:
 
             if not self.states['aimed']:
                 aim_state = self.green_aim.run(green)
-                if aim_state[0] == 0:
+                if not aim_state[0]:
                     return 2, aim_state[1]
-                elif aim_state[0] == 1:
-                    self.__reset_pid()
-                    self.states['aimed'] = True
-                    return 0, None
+                self.__reset_pid()
+                self.states['aimed'] = True
+                return 2, 0
             else:
-                targ_p = (green[:2] + (green[2]//2, 0)) if self.states['front'] else (green[:2] + green[-2:]//(2,1))
+                targ_p = (green[:2] + (green[2]//2, 0))
                 err = self.__expect - targ_p
                 if prod(abs(err) - self.err_tolerance < 0):
-                    if self.states['front']:
-                        return 1, None
-                    self.states['front'] = True
-                    self.__reset_pid(.7)
-                    return 2, 0
+                    return 1, None
 
-                err_d = (err - self.__last_err)/(time() - self.__last_time)
-                self.__last_err,self.__last_time = err, time()
-                self.__err_sum += err
-                spd = sum((err, self.__err_sum, err_d) * self.__K, axis=0)
+                self.update_K(err)
+                err_d =  (self.__last_targ - targ_p)/(self.__last_time - time())
+                self.__last_err = err
+                self.__last_time = time()
+                spd = sum((err, err_d) * self.__K, axis=0)
                 spd = (sum(spd), spd[1]) if spd[0]>0 else (spd[1], spd[1] - spd[0])
+                # DEBUG
+                # spd = around(spd).astype(int)
+                # print('xerr:{}, yerr:{}, lspd:{}, rspd:{}'.format(err[0],err[1], spd[0], spd[1]))
         else:
             self.states['aimed'], self.states['found'] = False, False
             spd = SEARCHING * array((-1,1) if self.__last_err[0]>0 else (1,-1))
 
         spd = around(spd).astype(int)
-        should_run = sum(self.__last_spd - spd) == 0
+
+        should_run = sum(self.__last_spd - spd) != 0
         self.__last_spd = spd
         return 0, spd.tolist() if should_run else None
 
-    def __reset_pid(self, scale_pid=1.0):
-        # Kp, Ki, Kd
-        self.__K  = array([[1.1*scale_pid, 1.3*scale_pid], [.001, .001], [.03, .03]])
-        self.__last_time = time()
-        # x,y
-        self.__last_err = array([0.,0.])
-        self.__err_sum = array([0.,0.])
+    def update_K(self, err):
+        err = abs(err)
+        self.__K[0] = array([self.Kp[0][searchsorted(self.__err_rng[0], err[0])], self.Kp[1][searchsorted(self.__err_rng[1], err[1])]])
 
 class GreenAim:
+    def update_Kp(self, err):
+        self.__K[0] = clip(self.Kp_base - self.Kp_step*abs(err), self.Kp_min, self.Kp_base)
+
     def __init__(self):
-        self.__K  = array([.75, 0, 0.001])
-        self.__last_spd,self.__last_err,self.__err_sum = 0,0,0
-        self.__found,self.__last_time = False, time()
+        self.Kp_base = 1.0
+        self.Kp_step = .01
+        self.Kp_min = .8
+
+        self.__K  = array([.75, 0.001])
+        self.__last_spd,self.__last_err = 0,0
+        self.__found = False
         self.__expect = SCALE_BOTTOM_CENTER[0]
 
     def run(self, coordinate):
         if not self.__found:
-            self.__last_err,self.__err_sum = 0,0
-            self.__last_time = time()
+            self.__last_err = 0
             self.__found = True
 
         err = self.__expect - sum(coordinate[[0,2]] // (1,2))
         if abs(err) < 5:
             return 1,None
-        err_d = (err - self.__last_err)/(time() - self.__last_time)
-        self.__err_sum += err
-        self.__last_err,self.__last_time = err, time()
-        spd = around(clip(sum((err, self.__err_sum, err_d) * self.__K), -100, 100)).astype(int)
+
+        self.update_Kp(err)
+        err_d = err - self.__last_err
+        self.__last_err = err
+        spd = around(sum((err, err_d) * self.__K)).astype(int)
         should_run = self.__last_spd != spd
         self.__last_spd = spd
         return 0, int(spd) if should_run else None

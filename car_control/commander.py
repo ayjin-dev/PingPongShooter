@@ -12,7 +12,7 @@ CLIPPER_CLOSE = 0
 CLIPPER_CLIP = 0
 CLIPPER_OPEN = 25
 CAM_VIEW = 145
-CAM_FULL_VIEW = 149
+CAM_FULL_VIEW = 153
 
 class RoboCar():
     def __init__(self):
@@ -116,7 +116,8 @@ class CommandThread(Thread):
         self.cmd_q = cmd_q
         self.exit_event = exit_event
         self.car = RoboCar()
-        self.car.set_cam(CAM_VIEW)
+        # self.car.set_cam(CAM_VIEW)
+        self.car.set_cam(CAM_FULL_VIEW)
 
         self.car.reset()
 
