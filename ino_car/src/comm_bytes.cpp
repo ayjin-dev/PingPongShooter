@@ -5,20 +5,9 @@
 #include "bytes_trans.h"
 #include "comm_bytes.h"
 
-#define WAIT_RESET_TIME 150
-
 #define SPI_CS_PIN 10
 MCP_CAN CAN (SPI_CS_PIN);
 
-Servo arm_joint;
-Servo cam_pan;
-Servo clip;
-Servo shoot;
-
-#define CAM_PAN_PIN 3
-#define ARM_JOINT_PIN 6
-#define CLIP_PIN 9
-#define SHOOT_PIN 13
 
 int16_t t_pwm = 3000;
 bool cam_switch = true;
@@ -26,14 +15,33 @@ bool cam_switch = true;
 unsigned char reset_comm[8] = {0x55,0x55,0x55,0x55,0x55,0x55,0x55,0x55};
 unsigned char spd_mode[8] = {0x03,0x55,0x55,0x55,0x55,0x55,0x55,0x55};
 
+Servo arm_joint;
+Servo cam_pan;
+Servo clip;
+Servo shoot;
 
-bool can_init() {
-    int count = 50;
+void setup()
+{
+    Serial.begin(BAUDRATE);
+    while (!Serial) {;}
     arm_joint.attach(ARM_JOINT_PIN);
     cam_pan.attach(CAM_PAN_PIN);
     clip.attach(CLIP_PIN);
     shoot.attach(SHOOT_PIN);
 
+    clip.write(25);
+    shoot.write(30);
+    cam_pan.write(150);
+    arm_joint.write(178);
+}
+
+bool can_init() {
+    int count = 50;
+
+    // arm_joint.attach(ARM_JOINT_PIN);
+    // cam_pan.attach(CAM_PAN_PIN);
+    // clip.attach(CLIP_PIN);
+    // shoot.attach(SHOOT_PIN);
     do {
         if(CAN_OK == CAN.begin(CAN_1000KBPS))
         {

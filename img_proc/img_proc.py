@@ -11,8 +11,8 @@ def scale_factor(x):
 prefer_distance = 20
 SCALE_BOTTOM_CENTER =  tuple((RESOLUTIONS * SCALE).astype(int) // (2,1) - (0, prefer_distance))
 # left clipper, right clipper
-READY_CLIP = (684, 540)
-CLIPPER = (684, 660)
+READY_CLIP = (684, 575)
+CLIPPER = (684, 658)
 
 SCALE_CLIPPER = scale_factor(CLIPPER)
 SCALE_READY_CLIP = scale_factor(READY_CLIP)
@@ -80,6 +80,12 @@ class ImgProc(BaseProc):
             self.mode = GreenZone()
             if self.debug:
                 self.draw_mode = self.draw_green
+        elif mode == 'barrel':
+            self.change_color('pink')
+            self.mode = GreenZone()
+            if self.debug:
+                self.draw_mode = self.draw_green
+
 
     def processing(self):
         mode = self.mde_q.get()

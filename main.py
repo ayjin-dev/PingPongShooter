@@ -7,7 +7,7 @@ from car_control.commander import CommandThread,ARM_DOWN,ARM_UP,CLIPPER_CLOSE,CL
 from img_proc.img_proc import ImageProcessingThread, ImgProc
 from img_proc.base_proc import SCALE,RESOLUTIONS
 from car_control.rst_serial import CustomQueue
-from functions import PickBall, GreenZone
+from functions import PickBall, GreenZone,Barrel
 
 class mainControl:
     def __init__(self, cmd_q, img_q, mde_q):
@@ -18,15 +18,19 @@ class mainControl:
         self.exit = False
         self.win_center = around(SCALE*RESOLUTIONS*0.5).astype(int)
         self.n_full, self.n_total = 0,0
-        self.mode = [False, False]
+        self.mode = [False, False, False]
 
         # self.mde_q.put('ball')
         # self.send('arm', ARM_DOWN)
         # self.send('clip', CLIPPER_CLOSE)
 
+        # self.send('arm', ARM_UP)
+        # self.send('clip', CLIPPER_OPEN)
+        # self.mde_q.put('green_zone')
+
         self.send('arm', ARM_UP)
         self.send('clip', CLIPPER_OPEN)
-        self.mde_q.put('green_zone')
+        self.mde_q.put('barrel')
 
     def send(self, o, p):
         try:
@@ -39,8 +43,8 @@ class mainControl:
 
     def stop(self):
         self.cmd_clear()
-        # self.send('spds', (-200, -200))
-        # sleep(1.2)
+        # self.send('spds', (-100,-100))
+        # sleep(0.6)
         self.send('spst', 0)
         print('full:{}, total:{}'.format(self.n_full, self.n_total))
 
@@ -91,7 +95,24 @@ class mainControl:
                 self.send('spds', param)
             elif state == 2:
                 self.send('spst', param)
-        if state == 1:
+        elif state == 1:
+            self.send('spst', 0)
+            return True
+        return False
+
+    def shoot_barrel(self, coordinate):
+        if not self.mode[2]:
+            print('shoot the ball')
+            self.mode[2] = True
+            self.ShootBarrel = Barrel()
+
+        state, param = self.ShootBarrel.run(coordinate)
+        if param is not None:
+            if state == 0:
+                self.send('spds', param)
+            elif state == 1:
+                self.send('spst', param)
+        elif state == 2:
             self.send('spst', 0)
             return True
         return False
@@ -100,7 +121,7 @@ class mainControl:
         while not self.exit:
             try:
                 coordinate = self.img_get()
-                if self.green_zone(coordinate):
+                if self.shoot_barrel(coordinate):
                     break
 
             except KeyboardInterrupt:
