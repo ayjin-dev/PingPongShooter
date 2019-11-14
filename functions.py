@@ -82,21 +82,19 @@ class GreenZone:
         self.__K  = array([[0.,0.], self.Kd])
 
     def __init__(self):
-        xerr_rng = [2, 5, 10, 25, 50, 95, 120]
-        yerr_rng = [2, 5, 10, 25, 50, 95, 120]
-        Kp_x = [1, 1.5, 1.7, 1.5, 2.7, 4.1, 2.7, 2.3]
-        Kp_y = [1, 1.2, 1.5, 1.3, 2.5, 3.9, 2.6, 2.0]
+        xerr_rng = [1, 2, 3, 4, 5, 10, 25, 50, 95, 120]
+        yerr_rng = [1, 2, 3, 4, 5, 10, 25, 50, 95, 120]
+        Kp_x = [1, 1.1, 1.3, 1.3,1.5, 1.7, 1.5, 2.7, 4.1, 2.7, 2.3]
+        Kp_y = [1, 1.1, 1.2, 1.2,1.2, 1.5, 1.3, 2.5, 3.9, 2.6, 2.0]
 
         self.__err_rng = array([xerr_rng, yerr_rng])
         self.Kp = array([Kp_x, Kp_y])
         self.Kd = [0., 0.]
 
-        self.err_tolerance = array([2,2])
-
+        self.err_tolerance = array([10,5])
         self.__expect = array(SCALE_BOTTOM_CENTER)
-
         self.__reset_pid()
-        self.states = {'found': False, 'aimed': False}
+        self.states = {'found': False, 'aimed': False, 'parked': False}
 
     def run(self, green):
         if green is not None:
@@ -112,10 +110,17 @@ class GreenZone:
                 self.states['aimed'] = True
                 return 2, 0
             else:
-                targ_p = (green[:2] + (green[2]//2, 0))
+                targ_p = (green[:2] + (green[2]//2, 0))# if self.states['parked'] else (green[:2] + green[-2:]//(2,1))
+
                 err = self.__expect - targ_p
                 if prod(abs(err) - self.err_tolerance < 0):
-                    return 1, None
+                    if self.states['parked']:
+                        print('after err:', err)
+                        return 1, None
+                    self.states['parked'] = True
+                    self.err_tolerance = array([1,1])
+                    print('before err:', err)
+                    return 3, None
 
                 self.update_K(err)
                 err_d =  (self.__last_targ - targ_p)/(self.__last_time - time())

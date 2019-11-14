@@ -6,13 +6,15 @@ from queue import Empty
 
 from time import sleep
 
-ARM_DOWN = 27
-ARM_UP = 178
-CLIPPER_CLOSE = 0
-CLIPPER_CLIP = 0
-CLIPPER_OPEN = 25
+ARM_DOWN = 0
+ARM_UP = 150
+ARM_REAL_UP = 170
+CLIPPER_CLOSE = 9
+CLIPPER_CLIP = 15
+CLIPPER_OPEN = 35
 CAM_VIEW = 145
 CAM_FULL_VIEW = 153
+CAM_DOWN_VIEW = 144
 
 class RoboCar():
     def __init__(self):
@@ -139,7 +141,7 @@ class CommandThread(Thread):
             elif order == 'cam':
                 car.set_cam(param)
             elif order == 'shoot':
-                pass
+                car.set_shoot(param)
             elif order == 'spst':
                 car.speed_broadcast(param)
             elif order == 'spds':

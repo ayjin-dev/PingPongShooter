@@ -9,12 +9,12 @@
 #define CAM_PAN_PIN 3
 #define ARM_JOINT_PIN 6
 #define CLIP_PIN 9
-#define SHOOT_PIN 10
+#define SHOOT_PIN 11
 
-#define CLIP_RESET_POS 25
-#define SHOT_RESET_POS 30
+#define CLIP_RESET_POS 35
+#define SHOT_RESET_POS 10
 #define CAM_RESET_POS  150
-#define ARM_RESET_POS  178
+#define ARM_RESET_POS  150
 
 #define BAUDRATE 115200
 

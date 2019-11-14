@@ -29,10 +29,10 @@ void setup()
     clip.attach(CLIP_PIN);
     shoot.attach(SHOOT_PIN);
 
-    clip.write(25);
-    shoot.write(30);
-    cam_pan.write(150);
-    arm_joint.write(178);
+    clip.write(CLIP_RESET_POS);
+    shoot.write(SHOT_RESET_POS);
+    cam_pan.write(CAM_RESET_POS);
+    arm_joint.write(ARM_RESET_POS);
 }
 
 bool can_init() {
