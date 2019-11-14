@@ -4,7 +4,6 @@ from base_proc import BaseProc
 from numpy.linalg import norm
 from pickle import dump,load
 
-
 class ColorSeg(BaseProc):
     def __init__(self):
         super().__init__()

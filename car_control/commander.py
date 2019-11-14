@@ -116,8 +116,7 @@ class CommandThread(Thread):
         self.cmd_q = cmd_q
         self.exit_event = exit_event
         self.car = RoboCar()
-        # self.car.set_cam(CAM_VIEW)
-        self.car.set_cam(CAM_FULL_VIEW)
+        self.car.set_cam(CAM_VIEW)
 
         self.car.reset()
 

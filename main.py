@@ -1,13 +1,12 @@
 from queue import Queue, Empty, Full
 from threading import Lock, Condition, Event
 from time import sleep
-from numpy import array,around
 
 from car_control.commander import CommandThread,ARM_DOWN,ARM_UP,CLIPPER_CLOSE,CLIPPER_CLIP,CLIPPER_OPEN,CAM_VIEW,CAM_FULL_VIEW
 from img_proc.img_proc import ImageProcessingThread, ImgProc
 from img_proc.base_proc import SCALE,RESOLUTIONS
 from car_control.rst_serial import CustomQueue
-from functions import PickBall, GreenZone,Barrel
+from functions import PickBall, GreenZone, Barrel
 
 class mainControl:
     def __init__(self, cmd_q, img_q, mde_q):
@@ -16,21 +15,30 @@ class mainControl:
         self.img_get = img_q.get
         self.mde_q = mde_q
         self.exit = False
-        self.win_center = around(SCALE*RESOLUTIONS*0.5).astype(int)
-        self.n_full, self.n_total = 0,0
-        self.mode = [False, False, False]
+        self.n_full, self.n_total = 0, 0
 
-        # self.mde_q.put('ball')
-        # self.send('arm', ARM_DOWN)
-        # self.send('clip', CLIPPER_CLOSE)
+        self.init_mode = [False, False, False]
+        self.cur_mode = 0
 
-        # self.send('arm', ARM_UP)
-        # self.send('clip', CLIPPER_OPEN)
-        # self.mde_q.put('green_zone')
+        self.mde_q.put('ball')
 
-        self.send('arm', ARM_UP)
-        self.send('clip', CLIPPER_OPEN)
-        self.mde_q.put('barrel')
+    def run(self):
+        while not self.exit:
+            try:
+                coordinate = self.img_get()
+                if self.curr_mode == 0:
+                    should_next = self.pick_ball(coordinate)
+                elif self.cur_mode == 1:
+                    should_next = self.green_zone(coordinate)
+                elif self.cur_mode == 2:
+                    should_next = self.shoot_barrel(coordinate)
+                elif self.cur_mode == 3:
+                    should_next = self.reset_mode()
+                if should_next:
+                    self.cur_mode += 1
+            except KeyboardInterrupt:
+                break
+        self.stop()
 
     def send(self, o, p):
         try:
@@ -43,16 +51,20 @@ class mainControl:
 
     def stop(self):
         self.cmd_clear()
-        # self.send('spds', (-100,-100))
-        # sleep(0.6)
         self.send('spst', 0)
         print('full:{}, total:{}'.format(self.n_full, self.n_total))
 
+    def reset_mode(self):
+        self.init_mode = [False, False, False]
+        self.cur_mode = 0
+        return False
+
     def pick_ball(self, coordinate):
-        if not self.mode[0]:
-            self.mode[0] = True
+        if not self.init_mode[0]:
+            self.init_mode[0] = True
             self.send('clip', CLIPPER_CLOSE)
             self.send('arm', ARM_DOWN)
+            self.send('cam', CAM_VIEW)
             sleep(0.02)
             self.PickBall = PickBall()
 
@@ -73,6 +85,7 @@ class mainControl:
             self.send('clip', CLIPPER_OPEN)
             sleep(0.1)
             self.stop()
+
             self.mde_q.put('green_zone')
             return True
         elif state == 2:
@@ -84,9 +97,11 @@ class mainControl:
         return False
 
     def green_zone(self,coordinate):
-        if not self.mode[1]:
-            print('into green zone')
-            self.mode[1] = True
+        if not self.init_mode[1]:
+            self.send('arm', ARM_UP)
+            self.send('clip', CLIPPER_OPEN)
+            self.send('cam', CAM_FULL_VIEW)
+            self.init_mode[1] = True
             self.GreenZone = GreenZone()
 
         state, param = self.GreenZone.run(coordinate)
@@ -97,13 +112,14 @@ class mainControl:
                 self.send('spst', param)
         elif state == 1:
             self.send('spst', 0)
+            self.mde_q.put('barrel')
             return True
         return False
 
     def shoot_barrel(self, coordinate):
-        if not self.mode[2]:
+        if not self.init_mode[2]:
             print('shoot the ball')
-            self.mode[2] = True
+            self.init_mode[2] = True
             self.ShootBarrel = Barrel()
 
         state, param = self.ShootBarrel.run(coordinate)
@@ -117,17 +133,6 @@ class mainControl:
             return True
         return False
 
-    def run(self):
-        while not self.exit:
-            try:
-                coordinate = self.img_get()
-                if self.shoot_barrel(coordinate):
-                    break
-
-            except KeyboardInterrupt:
-                break
-        self.stop()
-
 if __name__ == '__main__':
     cmd_q = CustomQueue(20)
     img_q = Queue()
@@ -137,14 +142,12 @@ if __name__ == '__main__':
     exit_condition = Condition(condition_lock)
     exit_event = Event()
 
-    debug = True# True
-
+    debug = True
     image_thread = ImageProcessingThread(ImgProc(img_q, mde_q, debug), exit_condition)
 
     threads = [CommandThread(cmd_q, exit_event), image_thread]
     for thread in threads:
         thread.start()
-
     sleep(1.7)
     main_control = mainControl(cmd_q, img_q, mde_q)
     main_control.run()

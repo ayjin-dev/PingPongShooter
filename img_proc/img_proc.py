@@ -8,9 +8,8 @@ from numpy.linalg import norm
 def scale_factor(x):
     return around(array(x)*SCALE).astype(int).tolist()
 
-prefer_distance = 20
-SCALE_BOTTOM_CENTER =  tuple((RESOLUTIONS * SCALE).astype(int) // (2,1) - (0, prefer_distance))
-# left clipper, right clipper
+SCALE_BOTTOM_CENTER_PREFER_DISTANCE = 20
+SCALE_BOTTOM_CENTER =  tuple((RESOLUTIONS * SCALE).astype(int) // (2,1) - (0, SCALE_BOTTOM_CENTER_PREFER_DISTANCE))
 READY_CLIP = (684, 575)
 CLIPPER = (684, 658)
 

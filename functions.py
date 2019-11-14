@@ -1,4 +1,4 @@
-from numpy import array,argmin,around,cross,size,where,clip,abs,prod,sum,searchsorted
+from numpy import array,around,clip,abs,prod,sum,searchsorted
 from numpy.linalg import norm
 from time import time, sleep
 
