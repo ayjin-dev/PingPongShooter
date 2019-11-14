@@ -37,7 +37,7 @@ def open_serial_port():
     ports = glob('/dev/ttyUSB[0-9]*')
     if len(ports) < 1:
         print('ports not found!')
-        exit(-1)
+        return None
     return Serial(port=ports[0], baudrate=115200)
 
 

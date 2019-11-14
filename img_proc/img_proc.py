@@ -1,6 +1,6 @@
 from threading import Thread
 from queue import Empty
-from .base_proc import BaseProc, SCALE,RESOLUTIONS
+from .base_proc import BaseProc, SCALE, SCALE_RESOLUTIONS
 from cv2 import WINDOW_AUTOSIZE, namedWindow, imshow, waitKey, destroyAllWindows,line
 from numpy import array,argmin,around
 from numpy.linalg import norm
@@ -9,7 +9,7 @@ def scale_factor(x):
     return around(array(x)*SCALE).astype(int).tolist()
 
 SCALE_BOTTOM_CENTER_PREFER_DISTANCE = 20
-SCALE_BOTTOM_CENTER =  tuple((RESOLUTIONS * SCALE).astype(int) // (2,1) - (0, SCALE_BOTTOM_CENTER_PREFER_DISTANCE))
+SCALE_BOTTOM_CENTER =  tuple(array(SCALE_RESOLUTIONS) // (2,1) - (0, SCALE_BOTTOM_CENTER_PREFER_DISTANCE))
 READY_CLIP = (676, 535)
 CLIPPER = (676, 638)
 
@@ -76,12 +76,12 @@ class ImgProc(BaseProc):
                 self.draw_mode = self.draw_ball
         elif mode == 'green_zone':
             self.change_color('green')
-            self.mode = GreenZone()
+            self.mode = Ball()# GreenZone()
             if self.debug:
                 self.draw_mode = self.draw_green
         elif mode == 'barrel':
             self.change_color('pink')
-            self.mode = GreenZone()
+            self.mode = Ball()# GreenZone()
             if self.debug:
                 self.draw_mode = self.draw_green
 

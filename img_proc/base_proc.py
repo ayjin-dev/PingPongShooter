@@ -1,9 +1,10 @@
 from numpy import array, argsort
 from pickle import load
 
-RESOLUTIONS = array([1280, 720])# array([1920, 1080])
+RESOLUTIONS = array([1280, 720])
 SCALE = 0.2
 # SCALE = 1.0
+SCALE_RESOLUTIONS = tuple((RESOLUTIONS * SCALE).astype(int))
 
 NUM_OF_MAX_AREAS = 10
 CAMERA = 2
@@ -13,7 +14,6 @@ from cv2 import CAP_PROP_FRAME_WIDTH,CAP_PROP_FRAME_HEIGHT,VideoCapture,MORPH_OP
 class BaseProc(object):
     def __init__(self):
         self.cap = VideoCapture(CAMERA)
-        self.__scale = tuple((RESOLUTIONS * SCALE).astype(int))
         self.cap.set(CAP_PROP_FRAME_WIDTH, RESOLUTIONS[0])
         self.cap.set(CAP_PROP_FRAME_HEIGHT, RESOLUTIONS[1])
         self.cap.set(CAP_PROP_AUTO_EXPOSURE, 1)
@@ -34,7 +34,7 @@ class BaseProc(object):
         self.morph_elem = None
 
     def img_resize(self):
-        self.frame = resize(self.frame,  self.__scale)
+        self.frame = resize(self.frame,  SCALE_RESOLUTIONS)
 
     def cvt_ycb(self, orig_img):
         image_ycb = cvtColor(orig_img, COLOR_BGR2YCrCb)
